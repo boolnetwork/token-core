@@ -69,6 +69,11 @@ lazy_static! {
             network_id: 477,
             chain_id: 477,
         });
+        chain_infos.push(ChainInfo {
+            network: "ETHW".to_string(),
+            network_id: 10001,
+            chain_id: 10001,
+        });
         RwLock::new(chain_infos)
     };
 }
