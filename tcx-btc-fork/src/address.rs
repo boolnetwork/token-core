@@ -255,6 +255,38 @@ impl FromStr for BtcForkAddress {
                     Payload::ScriptHash(ScriptHashType::from_slice(&data[1..]).unwrap()),
                 )
             }
+            0x1e => {
+                let coin_info = coin_info_from_param("DOGECOIN", "MAINNET", "NONE", "")
+                    .expect("DOGECOIN coin_info");
+                (
+                    network_from_coin(&coin_info).expect("doge"),
+                    Payload::PubkeyHash(PubkeyHashType::from_slice(&data[1..]).unwrap()),
+                )
+            }
+            0x16 => {
+                let coin_info = coin_info_from_param("DOGECOIN", "MAINNET", "P2WPKH", "")
+                    .expect("DOGECOIN-P2WPKH coin_info");
+                (
+                    network_from_coin(&coin_info).expect("doge"),
+                    Payload::ScriptHash(ScriptHashType::from_slice(&data[1..]).unwrap()),
+                )
+            }
+            0x71 => {
+                let coin_info = coin_info_from_param("DOGECOIN", "TESTNET", "NONE", "")
+                    .expect("DOGECOIN-TESTNET coin_info");
+                (
+                    network_from_coin(&coin_info).expect("doge-testnet"),
+                    Payload::PubkeyHash(PubkeyHashType::from_slice(&data[1..]).unwrap()),
+                )
+            }
+            // 0xc4 => {
+            //     let coin_info = coin_info_from_param("DOGECOIN", "TESTNET", "P2WPKH", "")
+            //         .expect("DOGECOIN-P2WPKH coin_info");
+            //     (
+            //         network_from_coin(&coin_info).expect("doge-testnet"),
+            //         Payload::ScriptHash(ScriptHashType::from_slice(&data[1..]).unwrap()),
+            //     )
+            // }
             x => {
                 return Err(BtcAddressError::Base58(base58::Error::InvalidVersion(
                     vec![x],
@@ -356,6 +388,13 @@ mod tests {
             .unwrap()
             .to_string();
         assert_eq!(addr, "bc1qum864wd9nwsc0u9ytkctz6wzrw6g7zdntm7f4e");
+        let pub_key_str = "0287A071C74E969A2DAAB292E5C14639EF373956DCC99BF70F8FF7848A6DA73449";
+        let pub_key = hex::decode(pub_key_str).unwrap();
+        let network = network_from_param("DOGECOIN", "MAINNET", "NONE").unwrap();
+        let addr = BtcForkAddress::p2pkh(&pub_key, &network)
+            .unwrap()
+            .to_string();
+        assert_eq!(addr, "D9dr3F2U77frfkpBasCwRzmzdU7pe78nzc");
     }
 
     #[test]
@@ -386,6 +425,11 @@ mod tests {
         assert_eq!(addr.network.coin, "BITCOIN");
         assert_eq!(addr.network.seg_wit, "P2WPKH");
         assert_eq!(addr.network.network, "TESTNET");
+
+        let addr = BtcForkAddress::from_str("DU4Cx1PZdpYQmZ3z5DT5k2UN8Lw6ZpfP5r").unwrap();
+        assert_eq!(addr.network.coin, "DOGECOIN");
+        assert_eq!(addr.network.seg_wit, "NONE");
+        assert_eq!(addr.network.network, "MAINNET");
     }
 
     #[test]
@@ -556,5 +600,10 @@ mod tests {
 
         let coin = coin_info_from_param("LITECOIN", "MAINNET", "P2WPKH", "").unwrap();
         assert!(!BtcForkAddress::is_valid("aaa", &coin));
+        let coin = coin_info_from_param("DOGECOIN", "MAINNET", "NONE", "").unwrap();
+        assert!(BtcForkAddress::is_valid(
+            "DU4Cx1PZdpYQmZ3z5DT5k2UN8Lw6ZpfP5r",
+            &coin
+        ));
     }
 }

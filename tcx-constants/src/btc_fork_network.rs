@@ -157,6 +157,50 @@ lazy_static! {
             xpub_prefix: [0x04, 0x35, 0x87, 0xCF],
             xprv_prefix: [0x04, 0x35, 0x83, 0x94],
         });
+        networks.push(BtcForkNetwork {
+            coin: "DOGECOIN",
+            network: "MAINNET",
+            seg_wit: "NONE",
+            hrp: "",
+            p2pkh_prefix: 0x1e,
+            p2sh_prefix: 0x16,
+            private_prefix: 0x9e,
+            xpub_prefix: [0x02, 0xfa, 0xca, 0xfd],
+            xprv_prefix: [0x02, 0xfa, 0xc3, 0x98],
+        });
+        networks.push(BtcForkNetwork {
+            coin: "BITCOIN",
+            network: "MAINNET",
+            seg_wit: "P2WPKH",
+            hrp: "",
+            p2pkh_prefix: 0x1e,
+            p2sh_prefix: 0x16,
+            private_prefix: 0x9e,
+            xpub_prefix: [0x02, 0xfa, 0xca, 0xfd],
+            xprv_prefix: [0x02, 0xfa, 0xc3, 0x98],
+        });
+        networks.push(BtcForkNetwork {
+            coin: "BITCOIN",
+            network: "TESTNET",
+            seg_wit: "NONE",
+            hrp: "",
+            p2pkh_prefix: 0x71,
+            p2sh_prefix: 0xc4,
+            private_prefix: 0xf1,
+            xpub_prefix: [0x04, 0x35, 0x87, 0xCF],
+            xprv_prefix: [0x04, 0x35, 0x83, 0x94],
+        });
+        networks.push(BtcForkNetwork {
+            coin: "BITCOIN",
+            network: "TESTNET",
+            seg_wit: "P2WPKH",
+            hrp: "",
+            p2pkh_prefix: 0x71,
+            p2sh_prefix: 0xc4,
+            private_prefix: 0xf1,
+            xpub_prefix: [0x04, 0x35, 0x87, 0xCF],
+            xprv_prefix: [0x04, 0x35, 0x83, 0x94],
+        });
         RwLock::new(networks)
     };
 
