@@ -169,7 +169,7 @@ lazy_static! {
             xprv_prefix: [0x02, 0xfa, 0xc3, 0x98],
         });
         networks.push(BtcForkNetwork {
-            coin: "BITCOIN",
+            coin: "DOGECOIN",
             network: "MAINNET",
             seg_wit: "P2WPKH",
             hrp: "",
@@ -180,7 +180,7 @@ lazy_static! {
             xprv_prefix: [0x02, 0xfa, 0xc3, 0x98],
         });
         networks.push(BtcForkNetwork {
-            coin: "BITCOIN",
+            coin: "DOGECOIN",
             network: "TESTNET",
             seg_wit: "NONE",
             hrp: "",
@@ -191,7 +191,7 @@ lazy_static! {
             xprv_prefix: [0x04, 0x35, 0x83, 0x94],
         });
         networks.push(BtcForkNetwork {
-            coin: "BITCOIN",
+            coin: "DOGECOIN",
             network: "TESTNET",
             seg_wit: "P2WPKH",
             hrp: "",
