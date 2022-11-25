@@ -506,7 +506,7 @@ pub fn export_private_key(data: &[u8]) -> Result<Vec<u8>> {
         Ok(build_tezos_base58_private_key(pk_hex.as_str())?)
     } else {
         // private_key prefix is only about chain type and network
-        let coin_info = coin_info_from_param(&param.chain_type, &param.network, "", "")?;
+        let coin_info = coin_info_from_param(&param.chain_type, &param.network, "NONE", "")?;
 
         let bytes = hex::decode(pk_hex.to_string())?;
         let typed_pk = TypedPrivateKey::from_slice(CurveType::SECP256k1, &bytes)?;
