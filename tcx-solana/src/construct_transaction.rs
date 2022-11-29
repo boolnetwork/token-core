@@ -1,14 +1,57 @@
 use bincode::serialize;
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use generic_array::{typenum::U64, GenericArray};
 use serde::{Deserialize, Serialize};
-use solana_program::pubkey::ParsePubkeyError;
+use solana_program::pubkey::Pubkey as SolPubkey;
 use solana_program::short_vec;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use std::mem;
-use std::str::FromStr;
 
-const MAX_BASE58_LEN: usize = 44;
+/// Instructions supported by the AssociatedTokenAccount program
+#[derive(Clone, Debug, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub enum AssociatedTokenAccountInstruction {
+    /// Creates an associated token account for the given wallet address and token mint
+    /// Returns an error if the account exists.
+    ///
+    ///   0. `[writeable,signer]` Funding account (must be a system account)
+    ///   1. `[writeable]` Associated token account address to be created
+    ///   2. `[]` Wallet address for the new associated token account
+    ///   3. `[]` The token mint for the new associated token account
+    ///   4. `[]` System program
+    ///   5. `[]` SPL Token program
+    Create,
+    /// Creates an associated token account for the given wallet address and token mint,
+    /// if it doesn't already exist.  Returns an error if the account exists,
+    /// but with a different owner.
+    ///
+    ///   0. `[writeable,signer]` Funding account (must be a system account)
+    ///   1. `[writeable]` Associated token account address to be created
+    ///   2. `[]` Wallet address for the new associated token account
+    ///   3. `[]` The token mint for the new associated token account
+    ///   4. `[]` System program
+    ///   5. `[]` SPL Token program
+    CreateIdempotent,
+    /// Transfers from and closes a nested associated token account: an
+    /// associated token account owned by an associated token account.
+    ///
+    /// The tokens are moved from the nested associated token account to the
+    /// wallet's associated token account, and the nested account lamports are
+    /// moved to the wallet.
+    ///
+    /// Note: Nested token accounts are an anti-pattern, and almost always
+    /// created unintentionally, so this instruction should only be used to
+    /// recover from errors.
+    ///
+    ///   0. `[writeable]` Nested associated token account, must be owned by `3`
+    ///   1. `[]` Token mint for the nested associated token account
+    ///   2. `[writeable]` Wallet's associated token account
+    ///   3. `[]` Owner associated token account address, must be owned by `5`
+    ///   4. `[]` Token mint for the owner associated token account
+    ///   5. `[writeable, signer]` Wallet address for the owner associated token account
+    ///   6. `[]` SPL Token program
+    RecoverNested,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum SystemInstruction {
     /// Create a new account
@@ -229,22 +272,8 @@ impl Pubkey {
                 .expect("Slice must be the same length as a Pubkey"),
         )
     }
-}
-impl FromStr for Pubkey {
-    type Err = ParsePubkeyError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() > MAX_BASE58_LEN {
-            return Err(ParsePubkeyError::WrongSize);
-        }
-        let pubkey_vec = bs58::decode(s)
-            .into_vec()
-            .map_err(|_| ParsePubkeyError::Invalid)?;
-        if pubkey_vec.len() != mem::size_of::<Pubkey>() {
-            Err(ParsePubkeyError::WrongSize)
-        } else {
-            Ok(Pubkey::new(&pubkey_vec))
-        }
+    pub const fn new_from_array(pubkey_array: [u8; 32]) -> Self {
+        Self(pubkey_array)
     }
 }
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Default)]
@@ -252,11 +281,6 @@ pub struct Signature(GenericArray<u8, U64>);
 impl Signature {
     pub fn new(signature_slice: &[u8]) -> Self {
         Self(GenericArray::clone_from_slice(signature_slice))
-    }
-}
-impl From<Signature> for [u8; 64] {
-    fn from(signature: Signature) -> Self {
-        signature.0.into()
     }
 }
 
@@ -327,9 +351,73 @@ pub fn transfer_token_instruction(
         },
     ];
     SolanaInstruction {
-        program_id: Pubkey::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").unwrap(),
+        program_id: Pubkey::new(
+            bs58::decode("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+                .into_vec()
+                .unwrap()
+                .as_slice(),
+        ),
         accounts: account_metas,
         data: pack_token_transfer(amount),
+    }
+}
+
+pub fn associated_token_account_instruction(
+    funding_address: &Pubkey,
+    wallet_address: &Pubkey,
+    token_mint_address: &Pubkey,
+) -> SolanaInstruction {
+    let token_program_id = bs58::decode("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+        .into_vec()
+        .unwrap();
+    let ata_program_id = bs58::decode("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
+        .into_vec()
+        .unwrap();
+    let associated_account_address_sol = SolPubkey::find_program_address(
+        &[&wallet_address.0, &token_program_id, &token_mint_address.0],
+        &SolPubkey::new(&ata_program_id),
+    )
+    .0;
+    let associated_account_address =
+        Pubkey::new_from_array(associated_account_address_sol.to_bytes());
+    let account_metas = vec![
+        AccountMeta {
+            pubkey: funding_address.clone(),
+            is_signer: true,
+            is_writable: true,
+        },
+        AccountMeta {
+            pubkey: associated_account_address.clone(),
+            is_signer: false,
+            is_writable: true,
+        },
+        AccountMeta {
+            pubkey: wallet_address.clone(),
+            is_signer: false,
+            is_writable: false,
+        },
+        AccountMeta {
+            pubkey: token_mint_address.clone(),
+            is_signer: false,
+            is_writable: false,
+        },
+        AccountMeta {
+            pubkey: Pubkey([0u8; 32]),
+            is_signer: false,
+            is_writable: false,
+        },
+        AccountMeta {
+            pubkey: Pubkey::new(&token_program_id),
+            is_signer: false,
+            is_writable: false,
+        },
+    ];
+    SolanaInstruction {
+        program_id: Pubkey::new(&ata_program_id),
+        accounts: account_metas,
+        data: AssociatedTokenAccountInstruction::Create
+            .try_to_vec()
+            .unwrap(),
     }
 }
 

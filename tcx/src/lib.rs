@@ -2935,7 +2935,8 @@ mod tests {
                 recent_blockhash: bs58::decode("Hn33taMvEMPyGDZ3numAbt4mg3TJTe7YpnjaFkztErMW")
                     .into_vec()
                     .unwrap(),
-                token_from: Vec::new(),
+                signal: 0,
+                param: Vec::new(),
             };
 
             let tx = SignParam {

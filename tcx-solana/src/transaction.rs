@@ -6,8 +6,10 @@ pub struct SolanaTxIn {
     pub amount: u64,
     #[prost(bytes, tag = "3")]
     pub recent_blockhash: std::vec::Vec<u8>,
-    #[prost(bytes, tag = "4")]
-    pub token_from: std::vec::Vec<u8>,
+    #[prost(uint32, tag = "4")]
+    pub signal: u32,
+    #[prost(bytes, tag = "5")]
+    pub param: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SolanaTxOut {

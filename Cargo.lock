@@ -4241,7 +4241,9 @@ name = "tcx-solana"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "borsh",
  "bs58 0.4.0",
+ "failure",
  "generic-array 0.14.6",
  "prost 0.6.1",
  "prost-types 0.6.1",
