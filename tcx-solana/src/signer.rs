@@ -1,13 +1,15 @@
 use crate::construct_transaction::{
-    message_from_instructions, transfer_instruction, transfer_token_instruction, Pubkey, Signature,
-    SolanaTransaction,
+    associated_token_account_instruction, message_from_instructions, transfer_instruction,
+    transfer_token_instruction, Pubkey, Signature, SolanaTransaction,
 };
 use crate::transaction::{SolanaTxIn, SolanaTxOut};
+use crate::Error;
 use bincode::serialize;
 use sp_core::bytes::from_hex;
 use std::convert::TryFrom;
 use tcx_chain::Result;
 use tcx_chain::{Keystore, TransactionSigner};
+
 impl TransactionSigner<SolanaTxIn, SolanaTxOut> for Keystore {
     fn sign_transaction(
         &mut self,
@@ -17,11 +19,20 @@ impl TransactionSigner<SolanaTxIn, SolanaTxOut> for Keystore {
     ) -> Result<SolanaTxOut> {
         let payer_pubkey = Pubkey(<[u8; 32]>::try_from(from_hex(address)?.as_slice())?);
         let to_pubkey = Pubkey(<[u8; 32]>::try_from(tx.to.as_slice())?);
-        let instruction = if !tx.token_from.is_empty() {
-            let from_pubkey = Pubkey(<[u8; 32]>::try_from(tx.token_from.as_slice())?);
-            transfer_token_instruction(&from_pubkey, &to_pubkey, &payer_pubkey, tx.amount)
-        } else {
-            transfer_instruction(&payer_pubkey, &to_pubkey, tx.amount)
+        let instruction = match tx.signal {
+            0 => transfer_instruction(&payer_pubkey, &to_pubkey, tx.amount),
+            1 => transfer_token_instruction(
+                &Pubkey(<[u8; 32]>::try_from(tx.param.as_slice())?),
+                &to_pubkey,
+                &payer_pubkey,
+                tx.amount,
+            ),
+            2 => associated_token_account_instruction(
+                &payer_pubkey,
+                &to_pubkey,
+                &Pubkey(<[u8; 32]>::try_from(tx.param.as_slice())?),
+            ),
+            _ => return Err(Error::InvalidSignal.into()),
         };
         let message = message_from_instructions(
             &[instruction],
