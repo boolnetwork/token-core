@@ -52,4 +52,7 @@ fn main() {
 
     env::set_var("OUT_DIR", "../tcx-solana/src");
     prost_build::compile_protos(&["src/solana.proto"], &["src/"]).unwrap();
+
+    env::set_var("OUT_DIR", "../tcx-aptos/src");
+    prost_build::compile_protos(&["src/aptos.proto"], &["src/"]).unwrap();
 }

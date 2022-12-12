@@ -185,6 +185,7 @@ mod tests {
     use ethereum_types::U256;
     use sp_core::Public as TraitPublic;
     use sp_runtime::traits::Verify;
+    use tcx_aptos::{AptosTxIn, AptosTxOut};
     use tcx_btc_fork::BtcForkSignedTxOutput;
     use tcx_ckb::{CachedCell, CellInput, CkbTxInput, CkbTxOutput, OutPoint, Script, Witness};
     use tcx_ethereum::{EthereumTxIn, EthereumTxOut};
@@ -2887,7 +2888,7 @@ mod tests {
             };
 
             let ret = call_api("sign_tx", tx).unwrap();
-            let output: EthereumTxOut = EthereumTxOut::decode(ret.as_slice()).unwrap();
+            let _output: EthereumTxOut = EthereumTxOut::decode(ret.as_slice()).unwrap();
             remove_created_wallet(&wallet.id);
         })
     }
@@ -3060,6 +3061,79 @@ mod tests {
             let ret = call_api("sign_tx", tx).unwrap();
             let output: SolanaTxOut = SolanaTxOut::decode(ret.as_slice()).unwrap();
             assert_eq!(output.tx,"ChmmgLisjWGtWjiRKZERyhS2JSzjdGTKxr8GR8GKrcew46CBqsV3qNxAG3kqwFjuUBSHd4SquUU2sJ5TcSDP6S918wQcDJam1ppnN5MaCdCUHxCZ3gPEyc3T6t6zPSqEiDcpx5FvBWxeaA4Da7VjDkGWUow7nCa4iNDUHf45oXinN6FmBdQjJxig1pArobRdKpxhkb8R9jmtrhcQ3GKmWzkwLXJ3t2CNW3HkhCpSqPjtphwZ8SV3fW6khNGL4AfkBW3tjrLDJKg5dJLJvGcqxvdAi3iiF6tXLhznNJPiGxH48r6gs2iyHJcq8q5VwT5SFYLCCDqE3gwns3doezFzRB2wveGnv1g5r8Lh2oSbE6bRfrcqH2Ykr4bSVFhCizipQZWgm9z9yU7jkwu3y95479w3reMUWwBQfZsZKpvMxdftsBbJ34mr24YsFshm85A2DmVctYpqdq");
+        })
+    }
+    fn import_aptos_pk_store() -> WalletResult {
+        let param: PrivateKeyStoreImportParam = PrivateKeyStoreImportParam {
+            private_key: "f6d6d710ddac039b3cd26d19e30576124daf6658420cdd9470ad14ca7b2f2017"
+                .to_string(),
+            password: TEST_PASSWORD.to_string(),
+            name: "import_aptos_pk_store".to_string(),
+            password_hint: "".to_string(),
+            overwrite: true,
+            encoding: "".to_string(),
+        };
+
+        let ret = private_key_store_import(&encode_message(param).unwrap()).unwrap();
+        WalletResult::decode(ret.as_slice()).unwrap()
+    }
+    #[test]
+    pub fn test_sign_aptos_tx() {
+        run_test(|| {
+            let wallet = import_aptos_pk_store();
+            let derivation = Derivation {
+                chain_type: "APTOS".to_string(),
+                path: "m/44'/637'/0'/0'/0'".to_string(),
+                network: "MAINNET".to_string(),
+                seg_wit: "".to_string(),
+                chain_id: "".to_string(),
+                curve: "ED25519".to_string(),
+            };
+            let param = KeystoreCommonDeriveParam {
+                id: wallet.id.to_string(),
+                password: TEST_PASSWORD.to_string(),
+                derivations: vec![derivation],
+            };
+            let ret = call_api("keystore_common_derive", param).unwrap();
+            let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
+
+            let input = AptosTxIn {
+                sender: hex::decode(
+                    "43f6b2060e2d501e41f6c16e6c4c14c226760e27bb17fc5856072f57fb50132b",
+                )
+                .unwrap(),
+                sequence_number: 1,
+                coin_type: "0x1::aptos_coin::AptosCoin".to_string(),
+                to: hex::decode("bc53b90b9283ee484850ff6a47a12e48a6292907212ac50713f112e0a8c3efd2")
+                    .unwrap(),
+                amount: 1000,
+                max_gas_amount: 5000,
+                gas_unit_price: 100,
+                expiration_timestamp_secs: 1670815226,
+                chain_id: 40,
+            };
+
+            let tx = SignParam {
+                id: wallet.id.to_string(),
+                key: Some(Key::Password(TEST_PASSWORD.to_string())),
+                chain_type: "APTOS".to_string(),
+                address: rsp.accounts.first().unwrap().address.to_string(),
+                input: Some(::prost_types::Any {
+                    type_url: "imtoken".to_string(),
+                    value: encode_message(input).unwrap(),
+                }),
+            };
+
+            let ret = call_api("sign_tx", tx).unwrap();
+            let output: AptosTxOut = AptosTxOut::decode(ret.as_slice()).unwrap();
+            let hex_string = hex::encode(output.tx);
+            assert_eq!(
+                hex_string,
+"43f6b2060e2d501e41f6c16e6c4c14c226760e27bb17fc5856072f57fb50132b010000000000000002000000000000000000000000000000000000000000000000000000000000000104636f696e087472616e736665720\
+10700000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e094170746f73436f696e000220bc53b90b9283ee484850ff6a47a12e48a6292907212ac50713f112e0a8c3efd208e80\
+300000000000088130000000000006400000000000000fa9d966300000000280020dbad53f90f4c91cdffe471081340da1fd35a54042895789a64644233e9db0b4540ae506f01d858bbac4cfc6ff4478a5cbec96b7787e0af3cb1e20\
+d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
+            remove_created_wallet(&wallet.id);
         })
     }
 }
