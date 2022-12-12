@@ -1,0 +1,18 @@
+syntax = "proto3";
+package transaction;
+
+message AptosTxIn {
+  bytes sender = 1;
+  uint64 sequence_number = 2;
+  string coin_type = 3;
+  bytes to = 4;
+  uint64 amount = 5;
+  uint64 max_gas_amount = 6;
+  uint64 gas_unit_price = 7;
+  uint64 expiration_timestamp_secs = 8;
+  uint32 chain_id = 9;
+}
+
+message AptosTxOut {
+  bytes Tx = 1;
+}

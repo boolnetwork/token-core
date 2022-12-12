@@ -1,0 +1,20 @@
+[package]
+name = "tcx-aptos"
+version = "0.1.0"
+authors = ["CodyLeo <codyleo@foxmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tcx-chain = { path = "../tcx-chain" }
+tcx-constants = { path = "../tcx-constants" }
+tcx-primitive = { path = "../tcx-primitive" }
+sp-core = "2.0.0-rc3"
+prost = "0.6.1"
+prost-types = "0.6.1"
+serde = "1.0.136"
+bcs = "0.1.3"
+serde_bytes = "0.11.5"
+failure = "0.1.5"
+hex = "0.3.2"

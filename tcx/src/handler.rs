@@ -8,6 +8,7 @@ use prost::Message;
 use serde_json::Value;
 use tcx_primitive::{get_account_path, private_key_without_version, FromHex, TypedPrivateKey};
 
+use tcx_aptos::{AptosAddress, AptosTxIn};
 use tcx_bch::{BchAddress, BchTransaction};
 use tcx_btc_fork::{
     BtcForkAddress, BtcForkSegWitTransaction, BtcForkSignedTxOutput, BtcForkTransaction,
@@ -18,7 +19,7 @@ use tcx_chain::{Account, HdKeystore, Metadata, PrivateKeystore, Source};
 use tcx_ckb::{CkbAddress, CkbTxInput};
 use tcx_crypto::{XPUB_COMMON_IV, XPUB_COMMON_KEY_128};
 use tcx_filecoin::{FilecoinAddress, KeyInfo, UnsignedMessage};
-use tcx_solana::{SolanaAddress, SolanaTxIn, SolanaTxOut};
+use tcx_solana::{SolanaAddress, SolanaTxIn};
 use tcx_tron::TrxAddress;
 
 use crate::api::keystore_common_derive_param::Derivation;
@@ -84,6 +85,7 @@ fn derive_account<'a, 'b>(keystore: &mut Keystore, derivation: &Derivation) -> R
         "FILECOIN" => keystore.derive_coin::<FilecoinAddress>(&coin_info),
         "ETHEREUM" => keystore.derive_coin::<EthereumAddress>(&coin_info),
         "SOLANA" => keystore.derive_coin::<SolanaAddress>(&coin_info),
+        "APTOS" => keystore.derive_coin::<AptosAddress>(&coin_info),
         _ => Err(format_err!("derive_account unsupported_chain")),
     }
 }
@@ -487,7 +489,7 @@ pub fn export_private_key(data: &[u8]) -> Result<Vec<u8>> {
 
     // private_key prefix is only about chain type and network
     let _ = coin_info_from_param(&param.chain_type, &param.network, "", "")?;
-    let value = if ["TRON", "POLKADOT", "KUSAMA", "ETHEREUM", "SOLANA"]
+    let value = if ["TRON", "POLKADOT", "KUSAMA", "ETHEREUM", "SOLANA", "APTOS"]
         .contains(&param.chain_type.as_str())
     {
         Ok(pk_hex.to_string())
@@ -655,6 +657,7 @@ pub fn sign_tx(data: &[u8]) -> Result<Vec<u8>> {
         "TEZOS" => sign_tezos_tx_raw(&param, guard.keystore_mut()),
         "ETHEREUM" => sign_ethereum_tx_raw(&param, guard.keystore_mut()),
         "SOLANA" => sign_solana_tx(&param, guard.keystore_mut()),
+        "APTOS" => sign_aptos_tx(&param, guard.keystore_mut()),
         _ => Err(format_err!("sign_tx unsupported_chain")),
     }
 }
@@ -990,6 +993,22 @@ pub fn sign_solana_tx(param: &SignParam, keystore: &mut Keystore) -> Result<Vec<
             .as_slice(),
     )
     .expect("SolanaTxIn");
+
+    let signed_tx = keystore.sign_transaction(&param.chain_type, &param.address, &input)?;
+    encode_message(signed_tx)
+}
+
+pub fn sign_aptos_tx(param: &SignParam, keystore: &mut Keystore) -> Result<Vec<u8>> {
+    let input: AptosTxIn = AptosTxIn::decode(
+        param
+            .input
+            .as_ref()
+            .expect("raw_tx_input")
+            .value
+            .clone()
+            .as_slice(),
+    )
+    .expect("AptosTxIn");
 
     let signed_tx = keystore.sign_transaction(&param.chain_type, &param.address, &input)?;
     encode_message(signed_tx)

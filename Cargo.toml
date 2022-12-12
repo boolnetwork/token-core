@@ -16,5 +16,6 @@ members = [
     "tcx-tezos",
     "tcx-tester",
     "tcx-solana",
+    "tcx-aptos",
 ]
 

@@ -19,6 +19,7 @@ tcx-constants = { path = "../tcx-constants"}
 tcx-tezos = {path = "../tcx-tezos"}
 tcx-ethereum = { path = "../tcx-ethereum" }
 tcx-solana = { path = "../tcx-solana" }
+tcx-aptos = {path = "../tcx-aptos" }
 
 prost = "0.6.1"
 bytes = "0.5.4"

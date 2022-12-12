@@ -278,6 +278,13 @@ lazy_static! {
             network: "TESTNET".to_string(),
             seg_wit: "P2WPKH".to_string(),
         });
+        coin_infos.push(CoinInfo {
+            coin: "APTOS".to_string(),
+            derivation_path: "m/44'/637'/0'/0'/0'".to_string(),
+            curve: CurveType::ED25519,
+            network: "MAINNET".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
         RwLock::new(coin_infos)
     };
 }
