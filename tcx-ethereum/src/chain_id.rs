@@ -74,6 +74,76 @@ lazy_static! {
             network_id: 10001,
             chain_id: 10001,
         });
+        chain_infos.push(ChainInfo {
+            network: "FILECOIN_EVM".to_string(),
+            network_id: 314,
+            chain_id: 314,
+        });
+        chain_infos.push(ChainInfo {
+            network: "FILECOIN_HYPERSPACE_EVM".to_string(),
+            network_id: 3141,
+            chain_id: 3141,
+        });
+        chain_infos.push(ChainInfo {
+            network: "OPTIMISM".to_string(),
+            network_id: 10,
+            chain_id: 10,
+        });
+        chain_infos.push(ChainInfo {
+            network: "OPTIMISM_GOERLI".to_string(),
+            network_id: 420,
+            chain_id: 420,
+        });
+        chain_infos.push(ChainInfo {
+            network: "ARBITRUM".to_string(),
+            network_id: 42161,
+            chain_id: 42161,
+        });
+        chain_infos.push(ChainInfo {
+            network: "ARBITRUM_GOERLI".to_string(),
+            network_id: 421613,
+            chain_id: 421613,
+        });
+        chain_infos.push(ChainInfo {
+            network: "AVALANCHE".to_string(),
+            network_id: 43114,
+            chain_id: 43114,
+        });
+        chain_infos.push(ChainInfo {
+            network: "AVALANCHE_FUJI".to_string(),
+            network_id: 43113,
+            chain_id: 43113,
+        });
+        chain_infos.push(ChainInfo {
+            network: "FANTOM".to_string(),
+            network_id: 250,
+            chain_id: 250,
+        });
+        chain_infos.push(ChainInfo {
+            network: "FANTOM_TESTNET".to_string(),
+            network_id: 4002,
+            chain_id: 4002,
+        });
+        chain_infos.push(ChainInfo {
+            network: "CRONOS".to_string(),
+            network_id: 25,
+            chain_id: 25,
+        });
+        chain_infos.push(ChainInfo {
+            network: "CRONOS_TESTNET".to_string(),
+            network_id: 338,
+            chain_id: 338,
+        });
+        chain_infos.push(ChainInfo {
+            network: "ZKSYNC".to_string(),
+            network_id: 324,
+            chain_id: 324,
+        });
+        chain_infos.push(ChainInfo {
+            network: "ZKSYNC_TESTNET".to_string(),
+            network_id: 280,
+            chain_id: 280,
+        });
         RwLock::new(chain_infos)
     };
 }

@@ -251,6 +251,104 @@ lazy_static! {
             seg_wit: "NONE".to_string(),
         });
         coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "FILECOIN_EVM".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "FILECOIN_HYPERSPACE_EVM".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHERRUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "OPTIMISM".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETRHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "OPTIMISM_GOERLI".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHERRUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "ARBITRUM".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETRHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "ARBITRUM_GOERLI".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "AVALANCHE".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "AVALANCHE_FUJI".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "FANTOM".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "FANTOM_TESTNET".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "CRONOS".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "CRONOS_TESTNET".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "ZKSYNC".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "ETHEREUM".to_string(),
+            derivation_path: "m/44'/60'/0'/0/0".to_string(),
+            curve: CurveType::SECP256k1,
+            network: "ZKSYNC_TESTNET".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
             coin: "DOGECOIN".to_string(),
             derivation_path: "m/44'/3'/0'/0/0".to_string(),
             curve: CurveType::SECP256k1,
