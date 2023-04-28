@@ -195,6 +195,7 @@ mod tests {
         ExportSubstrateKeystoreResult, SubstrateKeystore, SubstrateKeystoreParam, SubstrateRawTxIn,
         SubstrateTxOut,
     };
+    use tcx_sui::{SuiTransactionBlockResponseOptions, SuiTxInput, SuiTxOuput};
     use tcx_tezos::transaction::{TezosRawTxIn, TezosTxOut};
     use tcx_tron::transaction::{TronMessageInput, TronMessageOutput, TronTxInput, TronTxOutput};
 
@@ -3133,6 +3134,148 @@ mod tests {
 10700000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e094170746f73436f696e000220bc53b90b9283ee484850ff6a47a12e48a6292907212ac50713f112e0a8c3efd208e80\
 300000000000088130000000000006400000000000000fa9d966300000000280020dbad53f90f4c91cdffe471081340da1fd35a54042895789a64644233e9db0b4540ae506f01d858bbac4cfc6ff4478a5cbec96b7787e0af3cb1e20\
 d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
+            remove_created_wallet(&wallet.id);
+        })
+    }
+
+    fn import_sui_ed25519_pk_store() -> WalletResult {
+        let param: PrivateKeyStoreImportParam = PrivateKeyStoreImportParam {
+            private_key: "5BF718A81770F55AD59766EB5EBF792DF379B1DA81B40A47530CE32EA059F2CC"
+                .to_string(),
+            password: TEST_PASSWORD.to_string(),
+            name: "import_sui_ed25519_pk_store".to_string(),
+            password_hint: "".to_string(),
+            overwrite: true,
+            encoding: "".to_string(),
+        };
+
+        let ret = private_key_store_import(&encode_message(param).unwrap()).unwrap();
+        WalletResult::decode(ret.as_slice()).unwrap()
+    }
+
+    fn import_sui_seck256k1_pk_store() -> WalletResult {
+        let param: PrivateKeyStoreImportParam = PrivateKeyStoreImportParam {
+            private_key: "d22d0f6cf72a51d304a1ada52b04eaa03cf8130a3a3a6a153495219b502dc119"
+                .to_string(),
+            password: TEST_PASSWORD.to_string(),
+            name: "import_sui_seck256k1_pk_store".to_string(),
+            password_hint: "".to_string(),
+            overwrite: true,
+            encoding: "".to_string(),
+        };
+
+        let ret = private_key_store_import(&encode_message(param).unwrap()).unwrap();
+        WalletResult::decode(ret.as_slice()).unwrap()
+    }
+
+    #[test]
+    pub fn test_sui_ed25519_sign_tx() {
+        run_test(|| {
+            let wallet = import_sui_ed25519_pk_store();
+            let derivation = Derivation {
+                chain_type: "SUI".to_string(),
+                path: "m/44'/784'/0'/0'/0'".to_string(),
+                network: "MAINNET".to_string(),
+                seg_wit: "".to_string(),
+                chain_id: "".to_string(),
+                curve: "ED25519".to_string(),
+            };
+            let param = KeystoreCommonDeriveParam {
+                id: wallet.id.to_string(),
+                password: TEST_PASSWORD.to_string(),
+                derivations: vec![derivation],
+            };
+            let ret = call_api("keystore_common_derive", param).unwrap();
+            let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
+            let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHNQUFQAAAAAAIJXoZBHHdSW8FSdK+4HU4sqJ76kNNuqPjZtr4gzLaUNjsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/oAwAAAAAAAICWmAAAAAAAAA==".to_string();
+            let input = SuiTxInput {
+                intent: "AAAA".to_string(),
+                tx_data,
+                response_options: SuiTransactionBlockResponseOptions {
+                    show_input: false,
+                    show_raw_input: false,
+                    show_effects: false,
+                    show_events: false,
+                    show_object_changes: false,
+                    show_balance_changes: false,
+                },
+                r#type: 0,
+            };
+
+            let tx = SignParam {
+                id: wallet.id.to_string(),
+                key: Some(Key::Password(TEST_PASSWORD.to_string())),
+                chain_type: "SUI".to_string(),
+                address: rsp.accounts.first().unwrap().address.to_string(),
+                input: Some(::prost_types::Any {
+                    type_url: "imtoken".to_string(),
+                    value: encode_message(input).unwrap(),
+                }),
+            };
+
+            let ret = call_api("sign_tx", tx).unwrap();
+            let output: SuiTxOuput = SuiTxOuput::decode(ret.as_slice()).unwrap();
+            let sig = base64::encode(&[
+                0, 129, 43, 62, 99, 221, 63, 227, 0, 74, 51, 107, 36, 236, 174, 161, 101, 211, 74,
+                162, 227, 109, 172, 92, 195, 62, 62, 243, 46, 224, 64, 219, 160, 156, 45, 49, 171,
+                193, 0, 150, 109, 39, 241, 170, 226, 45, 34, 108, 245, 152, 178, 45, 28, 141, 156,
+                151, 56, 42, 194, 31, 209, 221, 236, 39, 11, 210, 50, 142, 249, 240, 202, 62, 22,
+                89, 18, 238, 12, 254, 163, 243, 205, 123, 153, 213, 110, 3, 142, 177, 20, 68, 38,
+                116, 19, 113, 255, 16, 226,
+            ]);
+            assert_eq!(output.signatures, sig);
+            remove_created_wallet(&wallet.id);
+        })
+    }
+
+    #[test]
+    pub fn test_sui_secp256k1_sign_tx() {
+        run_test(|| {
+            let wallet = import_sui_seck256k1_pk_store();
+            let derivation = Derivation {
+                chain_type: "SUI".to_string(),
+                path: "m/54'/784'/0'/0'/0'".to_string(),
+                network: "MAINNET".to_string(),
+                seg_wit: "".to_string(),
+                chain_id: "".to_string(),
+                curve: "SECP256k1".to_string(),
+            };
+            let param = KeystoreCommonDeriveParam {
+                id: wallet.id.to_string(),
+                password: TEST_PASSWORD.to_string(),
+                derivations: vec![derivation],
+            };
+            let ret = call_api("keystore_common_derive", param).unwrap();
+            let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
+            let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAABpPUv4DWejudfZjyhwRb30r93w6ejRwWWhqlxG9w7TxAHcuogjoTmy/mKCvhYfF5V/vKfRTW4Ko0fFgZgvRUFekU5NKAAAAAAAIHf09gz7lrd9KKelJ79D2KPkvMJ3jF8WLWvMTCuXdD0EaT1L+A1no7nX2Y8ocEW99K/d8Ono0cFloapcRvcO08ToAwAAAAAAAICWmAAAAAAAAA==".to_string();
+            let input = SuiTxInput {
+                intent: "AAAA".to_string(),
+                tx_data,
+                response_options: SuiTransactionBlockResponseOptions {
+                    show_input: false,
+                    show_raw_input: false,
+                    show_effects: false,
+                    show_events: false,
+                    show_object_changes: false,
+                    show_balance_changes: false,
+                },
+                r#type: 0,
+            };
+
+            let tx = SignParam {
+                id: wallet.id.to_string(),
+                key: Some(Key::Password(TEST_PASSWORD.to_string())),
+                chain_type: "SUI".to_string(),
+                address: rsp.accounts.first().unwrap().address.to_string(),
+                input: Some(::prost_types::Any {
+                    type_url: "imtoken".to_string(),
+                    value: encode_message(input).unwrap(),
+                }),
+            };
+
+            let ret = call_api("sign_tx", tx).unwrap();
+            let output: SuiTxOuput = SuiTxOuput::decode(ret.as_slice()).unwrap();
+            assert_eq!(output.signatures, "AU3Leyt5EKAYVGWhHQQD3gnyrvTiunynu0VU/wky7vYvE1LWI8dnvt0IwRu8dh5UKizUejU89JXoCKI/z/2oRNMC9uKMHAGame2Juz0DN+uBgBbDj/ZGQwU/rPs5ColiDHY=");
             remove_created_wallet(&wallet.id);
         })
     }

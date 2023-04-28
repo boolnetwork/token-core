@@ -20,6 +20,7 @@ tcx-tezos = {path = "../tcx-tezos"}
 tcx-ethereum = { path = "../tcx-ethereum" }
 tcx-solana = { path = "../tcx-solana" }
 tcx-aptos = {path = "../tcx-aptos" }
+tcx-sui = {path = "../tcx-sui" }
 
 prost = "0.6.1"
 bytes = "0.5.4"

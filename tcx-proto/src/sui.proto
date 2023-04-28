@@ -1,0 +1,30 @@
+syntax = "proto3";
+package transaction;
+
+message SuiTxInput {
+    string intent = 1;
+    string tx_data = 2;
+    SuiTransactionBlockResponseOptions response_options = 3;
+    ExecuteTransactionRequestType type = 4;
+}
+
+message SuiTransactionBlockResponseOptions {
+    bool show_input = 1;
+    bool show_raw_input = 2;
+    bool show_effects = 3;
+    bool show_events = 4;
+    bool show_object_changes = 5;
+    bool show_balance_changes = 6;
+}
+
+enum ExecuteTransactionRequestType {
+    WaitForEffectsCert = 0;
+    WaitForLocalExecution = 1;
+}
+
+message SuiTxOuput {
+    string tx_data = 1;
+    string signatures = 2;
+    SuiTransactionBlockResponseOptions response_options = 3;
+    ExecuteTransactionRequestType type = 4;
+}
