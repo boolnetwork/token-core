@@ -2,29 +2,35 @@ syntax = "proto3";
 package transaction;
 
 message SuiTxInput {
+    oneof SuiTxType {
+        RawTx raw_tx = 1;
+        NewTransfer transfer = 2;
+    };
+}
+
+message RawTx {
     string intent = 1;
     string tx_data = 2;
-    SuiTransactionBlockResponseOptions response_options = 3;
-    ExecuteTransactionRequestType type = 4;
 }
 
-message SuiTransactionBlockResponseOptions {
-    bool show_input = 1;
-    bool show_raw_input = 2;
-    bool show_effects = 3;
-    bool show_events = 4;
-    bool show_object_changes = 5;
-    bool show_balance_changes = 6;
+message NewTransfer {
+    oneof TransferType {
+        SuiTransfer sui = 1;
+        ProstObjectRef object = 2;
+    };
+    string recipient = 3;
+    string sender = 4;
+    ProstObjectRef gas_payment = 5;
+    uint64 gas_budget = 6;
+    uint64 gas_price = 7;
 }
 
-enum ExecuteTransactionRequestType {
-    WaitForEffectsCert = 0;
-    WaitForLocalExecution = 1;
+message SuiTransfer {
+    uint64 amount = 1;
 }
 
-message SuiTxOuput {
-    string tx_data = 1;
-    string signatures = 2;
-    SuiTransactionBlockResponseOptions response_options = 3;
-    ExecuteTransactionRequestType type = 4;
+message ProstObjectRef {
+    bytes object_id = 1;
+    uint64 seq_num = 2;
+    bytes object_digest = 3;
 }
