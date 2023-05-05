@@ -1,13 +1,15 @@
 mod address;
+mod primitives;
 mod signer;
 mod sui_serde;
 mod transaction;
 
 pub use crate::{
     address::SuiAddress,
+    primitives::SuiUnsignedMessage,
     transaction::{
-        NewTransfer, ProstObjectRef, RawTx, SuiTransfer, SuiTxInput, SuiTxOuput, SuiTxType,
-        SuiUnsignedMessage, TransferType,
+        new_transfer::TransferType, sui_tx_input::SuiTxType, NewTransfer, ProstObjectRef, RawTx,
+        SuiTransfer, SuiTxInput, SuiTxOuput,
     },
 };
 
@@ -39,4 +41,6 @@ pub enum Error {
     EmptyTxType,
     #[fail(display = "transfer type must be 'sui' or 'object'")]
     EmptyTransferType,
+    #[fail(display = "objectRef should not empty")]
+    EmptyObjectRef,
 }

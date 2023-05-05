@@ -1,5 +1,6 @@
 use crate::address::{DEFAULT_HASH_SIZE, ED25519_FALG, SECP256K1_FALG};
-use crate::transaction::{SuiTxInput, SuiTxOuput, SuiTxType, SuiUnsignedMessage};
+use crate::primitives::SuiUnsignedMessage;
+use crate::transaction::{sui_tx_input::SuiTxType, SuiTxInput, SuiTxOuput};
 use crate::Error;
 use sha2::{Digest, Sha256};
 use tcx_chain::{Keystore, TransactionSigner};
@@ -42,24 +43,23 @@ impl TransactionSigner<SuiTxInput, SuiTxOuput> for Keystore {
             _ => return Err(failure::Error::from(Error::InvalidSuiCurveType)),
         };
         signature.append(&mut sk.public_key().to_bytes());
-        let tx_data = match &tx.tx_type {
-            Some(tx) => match tx {
-                SuiTxType::RawTx(tx) => tx.tx_data.clone(),
-                _ => unimplemented!(),
-            },
-            None => unimplemented!(),
+        let tx_data = match &tx.sui_tx_type.as_ref().ok_or(crate::Error::EmptyTxType)? {
+            SuiTxType::RawTx(tx) => tx.tx_data.clone(),
+            SuiTxType::Transfer(_) => base64::encode(
+                &bcs::to_bytes(&unsigned_tx.value).map_err(|_| Error::BcsSerializeFailed)?,
+            ),
         };
         Ok(SuiTxOuput {
             tx_data,
-            signatures: base64::encode(&signature),
+            signature: base64::encode(&signature),
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::transaction::{Intent, RawTx, SuiTxInput, SuiTxType};
-    use crate::SuiAddress;
+    use crate::transaction::{RawTx, SuiTxInput};
+    use crate::{SuiAddress, SuiTxType};
     use tcx_chain::{Keystore, Metadata, TransactionSigner};
     use tcx_constants::{CoinInfo, CurveType};
 
@@ -82,7 +82,7 @@ mod tests {
         let account = ks.derive_coin::<SuiAddress>(&coin_info).unwrap().clone();
         println!("account: {:?}", account);
         let tx_input = SuiTxInput {
-            tx_type: Some(SuiTxType::RawTx(
+            sui_tx_type: Some(SuiTxType::RawTx(
                 RawTx {
                     intent: "AAAA".to_string(),
                     tx_data: "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHE5NKAAAAAAAIPBhCNlgeWQXkO2bJZJLJYPgkB4q8//5R9UHFiLTiPmmsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/nAwAAAAAAAICWmAAAAAAAAA==".to_string(),
@@ -94,7 +94,7 @@ mod tests {
             .unwrap();
         println!("output: {:?}", output);
         let sig = "ALrW17ATAG4uGcER3rJuxaJ5hClV+nyFIFydSty1jU/V3A/xclIkA/UM7s7j776MFcZbC/Tcaxbdx0DDApfjwgnSMo758Mo+FlkS7gz+o/PNe5nVbgOOsRREJnQTcf8Q4g==".to_string();
-        assert_eq!(sig, output.signatures)
+        assert_eq!(sig, output.signature)
     }
 
     #[test]
@@ -118,12 +118,12 @@ mod tests {
         let intent = "AAAA".to_string();
         let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAABpPUv4DWejudfZjyhwRb30r93w6ejRwWWhqlxG9w7TxAHcuogjoTmy/mKCvhYfF5V/vKfRTW4Ko0fFgZgvRUFekU5NKAAAAAAAIHf09gz7lrd9KKelJ79D2KPkvMJ3jF8WLWvMTCuXdD0EaT1L+A1no7nX2Y8ocEW99K/d8Ono0cFloapcRvcO08ToAwAAAAAAAICWmAAAAAAAAA==".to_string();
         let tx_input = SuiTxInput {
-            tx_type: Some(SuiTxType::RawTx(RawTx { intent, tx_data })),
+            sui_tx_type: Some(SuiTxType::RawTx(RawTx { intent, tx_data })),
         };
         let output = ks
             .sign_transaction("SUI", &account.address, &tx_input)
             .unwrap();
         println!("output: {:?}", output);
-        assert_eq!(output.signatures, "AU3Leyt5EKAYVGWhHQQD3gnyrvTiunynu0VU/wky7vYvE1LWI8dnvt0IwRu8dh5UKizUejU89JXoCKI/z/2oRNMC9uKMHAGame2Juz0DN+uBgBbDj/ZGQwU/rPs5ColiDHY=");
+        assert_eq!(output.signature, "AU3Leyt5EKAYVGWhHQQD3gnyrvTiunynu0VU/wky7vYvE1LWI8dnvt0IwRu8dh5UKizUejU89JXoCKI/z/2oRNMC9uKMHAGame2Juz0DN+uBgBbDj/ZGQwU/rPs5ColiDHY=");
     }
 }

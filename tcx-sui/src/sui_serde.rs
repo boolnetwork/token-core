@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::transaction::AccountAddress;
+use crate::primitives::AccountAddress;
 use eyre::eyre;
 use schemars::JsonSchema;
 use serde::{de::Error, Deserialize, Serialize};

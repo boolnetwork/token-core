@@ -34,3 +34,8 @@ message ProstObjectRef {
     uint64 seq_num = 2;
     bytes object_digest = 3;
 }
+
+message SuiTxOuput {
+    string tx_data = 1;
+    string signature = 2;
+}

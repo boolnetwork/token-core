@@ -195,7 +195,7 @@ mod tests {
         ExportSubstrateKeystoreResult, SubstrateKeystore, SubstrateKeystoreParam, SubstrateRawTxIn,
         SubstrateTxOut,
     };
-    use tcx_sui::{RawTx, SuiTransactionBlockResponseOptions, SuiTxInput, SuiTxOuput, SuiTxType};
+    use tcx_sui::{RawTx, SuiTxInput, SuiTxOuput, SuiTxType};
     use tcx_tezos::transaction::{TezosRawTxIn, TezosTxOut};
     use tcx_tron::transaction::{TronMessageInput, TronMessageOutput, TronTxInput, TronTxOutput};
 
@@ -3189,7 +3189,7 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
             let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
             let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHNQUFQAAAAAAIJXoZBHHdSW8FSdK+4HU4sqJ76kNNuqPjZtr4gzLaUNjsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/oAwAAAAAAAICWmAAAAAAAAA==".to_string();
             let input = SuiTxInput {
-                tx_type: Some(SuiTxType::RawTx(RawTx {
+                sui_tx_type: Some(SuiTxType::RawTx(RawTx {
                     intent: "AAAA".to_string(),
                     tx_data,
                 })),
@@ -3215,7 +3215,7 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
                 89, 18, 238, 12, 254, 163, 243, 205, 123, 153, 213, 110, 3, 142, 177, 20, 68, 38,
                 116, 19, 113, 255, 16, 226,
             ]);
-            assert_eq!(output.signatures, sig);
+            assert_eq!(output.signature, sig);
             remove_created_wallet(&wallet.id);
         })
     }
@@ -3241,7 +3241,7 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
             let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
             let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAABpPUv4DWejudfZjyhwRb30r93w6ejRwWWhqlxG9w7TxAHcuogjoTmy/mKCvhYfF5V/vKfRTW4Ko0fFgZgvRUFekU5NKAAAAAAAIHf09gz7lrd9KKelJ79D2KPkvMJ3jF8WLWvMTCuXdD0EaT1L+A1no7nX2Y8ocEW99K/d8Ono0cFloapcRvcO08ToAwAAAAAAAICWmAAAAAAAAA==".to_string();
             let input = SuiTxInput {
-                tx_type: Some(SuiTxType::RawTx(RawTx {
+                sui_tx_type: Some(SuiTxType::RawTx(RawTx {
                     intent: "AAAA".to_string(),
                     tx_data,
                 })),
@@ -3260,7 +3260,7 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
 
             let ret = call_api("sign_tx", tx).unwrap();
             let output: SuiTxOuput = SuiTxOuput::decode(ret.as_slice()).unwrap();
-            assert_eq!(output.signatures, "AU3Leyt5EKAYVGWhHQQD3gnyrvTiunynu0VU/wky7vYvE1LWI8dnvt0IwRu8dh5UKizUejU89JXoCKI/z/2oRNMC9uKMHAGame2Juz0DN+uBgBbDj/ZGQwU/rPs5ColiDHY=");
+            assert_eq!(output.signature, "AU3Leyt5EKAYVGWhHQQD3gnyrvTiunynu0VU/wky7vYvE1LWI8dnvt0IwRu8dh5UKizUejU89JXoCKI/z/2oRNMC9uKMHAGame2Juz0DN+uBgBbDj/ZGQwU/rPs5ColiDHY=");
             remove_created_wallet(&wallet.id);
         })
     }
