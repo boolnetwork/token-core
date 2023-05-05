@@ -71,11 +71,11 @@ pub fn decode_bytes_hex<T: for<'a> TryFrom<&'a [u8]>>(s: &str) -> Result<T, eyre
 }
 
 impl Hex {
-    fn decode(s: &str) -> Result<Vec<u8>, eyre::Report> {
+    pub fn decode(s: &str) -> Result<Vec<u8>, eyre::Report> {
         decode_bytes_hex(s)
     }
 
-    fn encode<T: AsRef<[u8]>>(data: T) -> String {
+    pub fn encode<T: AsRef<[u8]>>(data: T) -> String {
         hex::encode(data.as_ref())
     }
 }
@@ -223,5 +223,5 @@ where
     E: Debug,
     D: Deserializer<'de>,
 {
-    serde::de::Error::custom(format!("byte deserialization failed, cause by: {:?}", e))
+    serde::de::Error::custom(format!("byte deserialization failed, cause by: {e:?}"))
 }

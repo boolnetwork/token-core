@@ -5,7 +5,10 @@ mod transaction;
 
 pub use crate::{
     address::SuiAddress,
-    transaction::{SuiTransactionBlockResponseOptions, SuiTxInput, SuiTxOuput, SuiUnsignedMessage},
+    transaction::{
+        NewTransfer, ProstObjectRef, RawTx, SuiTransfer, SuiTxInput, SuiTxOuput, SuiTxType,
+        SuiUnsignedMessage, TransferType,
+    },
 };
 
 #[macro_use]
@@ -28,4 +31,12 @@ pub enum Error {
     InvalidSuiCurveType,
     #[fail(display = "bcs serialize failed")]
     BcsSerializeFailed,
+    #[fail(display = "invalid object id length")]
+    InvalidObjectID,
+    #[fail(display = "invalid object digest length")]
+    InvalidObjectDigest,
+    #[fail(display = "tx must be 'raw' or 'transfer'")]
+    EmptyTxType,
+    #[fail(display = "transfer type must be 'sui' or 'object'")]
+    EmptyTransferType,
 }

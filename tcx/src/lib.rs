@@ -195,7 +195,7 @@ mod tests {
         ExportSubstrateKeystoreResult, SubstrateKeystore, SubstrateKeystoreParam, SubstrateRawTxIn,
         SubstrateTxOut,
     };
-    use tcx_sui::{SuiTransactionBlockResponseOptions, SuiTxInput, SuiTxOuput};
+    use tcx_sui::{RawTx, SuiTransactionBlockResponseOptions, SuiTxInput, SuiTxOuput, SuiTxType};
     use tcx_tezos::transaction::{TezosRawTxIn, TezosTxOut};
     use tcx_tron::transaction::{TronMessageInput, TronMessageOutput, TronTxInput, TronTxOutput};
 
@@ -3189,19 +3189,11 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
             let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
             let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHNQUFQAAAAAAIJXoZBHHdSW8FSdK+4HU4sqJ76kNNuqPjZtr4gzLaUNjsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/oAwAAAAAAAICWmAAAAAAAAA==".to_string();
             let input = SuiTxInput {
-                intent: "AAAA".to_string(),
-                tx_data,
-                response_options: SuiTransactionBlockResponseOptions {
-                    show_input: false,
-                    show_raw_input: false,
-                    show_effects: false,
-                    show_events: false,
-                    show_object_changes: false,
-                    show_balance_changes: false,
-                },
-                r#type: 0,
+                tx_type: Some(SuiTxType::RawTx(RawTx {
+                    intent: "AAAA".to_string(),
+                    tx_data,
+                })),
             };
-
             let tx = SignParam {
                 id: wallet.id.to_string(),
                 key: Some(Key::Password(TEST_PASSWORD.to_string())),
@@ -3249,17 +3241,10 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
             let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
             let tx_data = "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAABpPUv4DWejudfZjyhwRb30r93w6ejRwWWhqlxG9w7TxAHcuogjoTmy/mKCvhYfF5V/vKfRTW4Ko0fFgZgvRUFekU5NKAAAAAAAIHf09gz7lrd9KKelJ79D2KPkvMJ3jF8WLWvMTCuXdD0EaT1L+A1no7nX2Y8ocEW99K/d8Ono0cFloapcRvcO08ToAwAAAAAAAICWmAAAAAAAAA==".to_string();
             let input = SuiTxInput {
-                intent: "AAAA".to_string(),
-                tx_data,
-                response_options: SuiTransactionBlockResponseOptions {
-                    show_input: false,
-                    show_raw_input: false,
-                    show_effects: false,
-                    show_events: false,
-                    show_object_changes: false,
-                    show_balance_changes: false,
-                },
-                r#type: 0,
+                tx_type: Some(SuiTxType::RawTx(RawTx {
+                    intent: "AAAA".to_string(),
+                    tx_data,
+                })),
             };
 
             let tx = SignParam {

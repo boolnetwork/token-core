@@ -1,4 +1,5 @@
 use super::sui_serde::{Base58, Hex, HexAccountAddress, Readable};
+use crate::sui_serde::decode_bytes_hex;
 use hex::FromHex;
 use move_core_types::{identifier::Identifier, language_storage::TypeTag};
 use schemars::JsonSchema;
@@ -14,14 +15,8 @@ pub type ObjectRef = (ObjectID, SequenceNumber, ObjectDigest);
 
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SuiTxInput {
-    #[prost(string, tag = "1")]
-    pub intent: String,
-    #[prost(string, tag = "2")]
-    pub tx_data: String,
-    #[prost(message, required, tag = "3")]
-    pub response_options: SuiTransactionBlockResponseOptions,
-    #[prost(enumeration = "ExecuteTransactionRequestType", tag = "4")]
-    pub r#type: i32,
+    #[prost(oneof = "SuiTxType", tags = "1")]
+    pub tx_type: Option<SuiTxType>,
 }
 
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -30,10 +25,135 @@ pub struct SuiTxOuput {
     pub tx_data: String,
     #[prost(string, tag = "2")]
     pub signatures: String,
-    #[prost(message, required, tag = "3")]
-    pub response_options: SuiTransactionBlockResponseOptions,
-    #[prost(enumeration = "ExecuteTransactionRequestType", tag = "4")]
-    pub r#type: i32,
+}
+
+#[derive(Clone, PartialEq, ::prost::Oneof)]
+pub enum SuiTxType {
+    #[prost(message, tag = "1")]
+    RawTx(RawTx),
+    #[prost(message, tag = "2")]
+    Transfer(NewTransfer),
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RawTx {
+    #[prost(string, tag = "1")]
+    pub intent: String,
+    #[prost(string, tag = "2")]
+    pub tx_data: String,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct NewTransfer {
+    #[prost(oneof = "TransferType", tags = "1, 2")]
+    transfer_type: Option<TransferType>,
+    #[prost(string, tag = "3")]
+    recipient: String,
+    #[prost(string, tag = "4")]
+    sender: String,
+    #[prost(message, required, tag = "5")]
+    gas_payment: ProstObjectRef,
+    #[prost(uint64, tag = "6")]
+    gas_budget: u64,
+    #[prost(uint64, tag = "7")]
+    gas_price: u64,
+}
+
+impl TryFrom<&NewTransfer> for ProgrammableTransaction {
+    type Error = crate::Error;
+
+    fn try_from(transfer: &NewTransfer) -> Result<ProgrammableTransaction, Self::Error> {
+        let programmable_tx = match transfer
+            .transfer_type
+            .as_ref()
+            .ok_or(crate::Error::EmptyTransferType)?
+        {
+            TransferType::Sui(sui) => {
+                let mut inputs = Vec::new();
+                let receiver = Address::from_str(&transfer.recipient)?;
+                let rec_arg = Argument::Input(0);
+                inputs.push(CallArg::Pure(
+                    bcs::to_bytes(&receiver).map_err(|_| crate::Error::BcsSerializeFailed)?,
+                ));
+                let mut commands = Vec::new();
+                let coin_arg = match sui.amount {
+                    Some(amount) => {
+                        let amt_arg = Argument::Input(1);
+                        commands.push(Command::SplitCoins(Argument::GasCoin, vec![amt_arg]));
+                        inputs.push(CallArg::Pure(
+                            bcs::to_bytes(&amount).map_err(|_| crate::Error::BcsSerializeFailed)?,
+                        ));
+                        Argument::Result(0)
+                    }
+                    None => Argument::GasCoin,
+                };
+                commands.push(Command::TransferObjects(vec![coin_arg], rec_arg));
+                ProgrammableTransaction { inputs, commands }
+            }
+            TransferType::Object(object) => {
+                let mut inputs = Vec::new();
+                let receiver = Address::from_str(&transfer.recipient)?;
+                let rec_arg = Argument::Input(0);
+                inputs.push(CallArg::Pure(
+                    bcs::to_bytes(&receiver).map_err(|_| crate::Error::BcsSerializeFailed)?,
+                ));
+                let object = ObjectRef::try_from(object)?;
+                let obj_arg = Argument::Input(1);
+                inputs.push(CallArg::Object(ObjectArg::ImmOrOwnedObject(object)));
+                ProgrammableTransaction {
+                    inputs,
+                    commands: vec![Command::TransferObjects(vec![obj_arg], rec_arg)],
+                }
+            }
+        };
+        Ok(programmable_tx)
+    }
+}
+
+#[derive(Clone, PartialEq, ::prost::Oneof)]
+pub enum TransferType {
+    #[prost(message, tag = "1")]
+    Sui(SuiTransfer),
+    #[prost(message, tag = "2")]
+    Object(ProstObjectRef),
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SuiTransfer {
+    #[prost(uint64, optional, tag = "1")]
+    amount: Option<u64>,
+}
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ProstObjectRef {
+    #[prost(bytes, tag = "1")]
+    object_id: Vec<u8>,
+    #[prost(uint64, tag = "2")]
+    seq_num: u64,
+    #[prost(bytes, tag = "3")]
+    object_digest: Vec<u8>,
+}
+
+impl TryFrom<&ProstObjectRef> for ObjectRef {
+    type Error = crate::Error;
+
+    fn try_from(message: &ProstObjectRef) -> Result<ObjectRef, Self::Error> {
+        if message.object_id.len() != 32 {
+            return Err(crate::Error::InvalidObjectID);
+        }
+        if message.object_digest.len() != 32 {
+            return Err(crate::Error::InvalidObjectDigest);
+        }
+        let mut object_id = [0u8; 32];
+        object_id.copy_from_slice(&message.object_id);
+        let mut object_digest = [0u8; 32];
+        object_digest.copy_from_slice(&message.object_digest);
+        Ok((
+            ObjectID(AccountAddress(object_id)),
+            SequenceNumber(message.seq_num),
+            ObjectDigest(Digest(object_digest)),
+        ))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Clone, Hash, Deserialize)]
@@ -46,18 +166,46 @@ impl TryFrom<&SuiTxInput> for SuiUnsignedMessage {
     type Error = crate::Error;
 
     fn try_from(message: &SuiTxInput) -> Result<SuiUnsignedMessage, Self::Error> {
-        let intent = bcs::from_bytes::<Intent>(
-            &base64::decode(&message.intent).map_err(|_| Self::Error::IntentBs64ParseError)?,
-        )
-        .map_err(|_| Self::Error::IntentBcsParseError)?;
-        let raw_tx = bcs::from_bytes::<SuiRawTx>(
-            &base64::decode(&message.tx_data).map_err(|_| Self::Error::TxDataBase64ParseError)?,
-        )
-        .map_err(|_| Self::Error::TxDataBcsParseError)?;
-        Ok(SuiUnsignedMessage {
-            intent,
-            value: raw_tx,
-        })
+        let unsigned_msg = match message.tx_type.clone().ok_or(crate::Error::EmptyTxType)? {
+            SuiTxType::RawTx(tx) => {
+                let intent = bcs::from_bytes::<Intent>(
+                    &base64::decode(&tx.intent).map_err(|_| Self::Error::IntentBs64ParseError)?,
+                )
+                .map_err(|_| Self::Error::IntentBcsParseError)?;
+                let raw_tx = bcs::from_bytes::<SuiRawTx>(
+                    &base64::decode(&tx.tx_data)
+                        .map_err(|_| Self::Error::TxDataBase64ParseError)?,
+                )
+                .map_err(|_| Self::Error::TxDataBcsParseError)?;
+                SuiUnsignedMessage {
+                    intent,
+                    value: raw_tx,
+                }
+            }
+            SuiTxType::Transfer(transfer) => {
+                let programmable_tx = ProgrammableTransaction::try_from(&transfer)?;
+                let sender = Address::from_str(&transfer.sender)?;
+                let payment = ObjectRef::try_from(&transfer.gas_payment)?;
+                let value = SuiRawTx::V1(TransactionDataV1 {
+                    kind: TransactionKind::ProgrammableTransaction(programmable_tx),
+                    sender,
+                    gas_data: GasData {
+                        price: transfer.gas_price,
+                        owner: sender,
+                        payment: vec![payment],
+                        budget: transfer.gas_budget,
+                    },
+                    expiration: TransactionExpiration::None,
+                });
+                let intent = Intent {
+                    scope: IntentScope::TransactionData,
+                    version: IntentVersion::V0,
+                    app_id: AppId::Sui,
+                };
+                SuiUnsignedMessage { intent, value }
+            }
+        };
+        Ok(unsigned_msg)
     }
 }
 
@@ -79,6 +227,16 @@ pub enum IntentVersion {
     V0 = 0,
 }
 
+impl IntentVersion {
+    pub fn from_u32(value: u32) -> Option<IntentVersion> {
+        let version = match value {
+            0 => Self::V0,
+            _ => return None,
+        };
+        Some(version)
+    }
+}
+
 /// This enums specifies the application ID. Two intents in two different applications
 /// (i.e., Narwhal, Sui, Ethereum etc) should never collide, so that even when a signing
 /// key is reused, nobody can take a signature designated for app_1 and present it as a
@@ -88,6 +246,17 @@ pub enum IntentVersion {
 pub enum AppId {
     Sui = 0,
     Narwhal = 1,
+}
+
+impl AppId {
+    pub fn from_u32(value: u32) -> Option<AppId> {
+        let app_id = match value {
+            0 => Self::Sui,
+            1 => Self::Narwhal,
+            _ => return None,
+        };
+        Some(app_id)
+    }
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Copy, Clone, PartialEq, Eq, Debug, Hash)]
@@ -100,6 +269,22 @@ pub enum IntentScope {
     SenderSignedTransaction = 4, // Used for an authority signature on a user signed transaction.
     ProofOfPossession = 5, // Used as a signature representing an authority's proof of possession of its authority protocol key.
     HeaderDigest = 6,      // Used for narwhal authority signature on header digest.
+}
+
+impl IntentScope {
+    pub fn from_u32(value: u32) -> Option<IntentScope> {
+        let scope = match value {
+            0 => Self::TransactionData,
+            1 => Self::TransactionEffects,
+            2 => Self::CheckpointSummary,
+            3 => Self::PersonalMessage,
+            4 => Self::SenderSignedTransaction,
+            5 => Self::ProofOfPossession,
+            6 => Self::HeaderDigest,
+            _ => return None,
+        };
+        Some(scope)
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -117,24 +302,43 @@ pub struct TransactionDataV1 {
 
 #[serde_as]
 #[derive(
-    Debug,
-    Eq,
-    Default,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Copy,
-    Clone,
-    Hash,
-    Serialize,
-    Deserialize,
-    JsonSchema,
+    Eq, Default, PartialEq, Ord, PartialOrd, Copy, Clone, Hash, Serialize, Deserialize, JsonSchema,
 )]
 pub struct Address(
     #[schemars(with = "Hex")]
     #[serde_as(as = "Readable<Hex, _>")]
     [u8; 32],
 );
+
+impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "0x{}", Hex::encode(self.0))
+    }
+}
+
+impl fmt::Debug for Address {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "0x{}", Hex::encode(self.0))
+    }
+}
+
+impl TryFrom<&[u8]> for Address {
+    type Error = crate::Error;
+
+    /// Tries to convert the provided byte array into a SuiAddress.
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        <[u8; 32]>::try_from(bytes)
+            .map_err(|_| Self::Error::AddressParseError)
+            .map(Address)
+    }
+}
+
+impl FromStr for Address {
+    type Err = crate::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        decode_bytes_hex(s).map_err(|_| crate::Error::AddressParseError)
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct GasData {
@@ -245,7 +449,7 @@ impl AccountAddress {
             .map(Self)
     }
 
-    pub fn to_hex(&self) -> String {
+    pub fn encode_to_hex(&self) -> String {
         format!("{:?}", hex::encode(self.0).to_lowercase())
     }
 }
@@ -290,7 +494,7 @@ impl Serialize for AccountAddress {
         S: Serializer,
     {
         if serializer.is_human_readable() {
-            self.to_hex().serialize(serializer)
+            self.encode_to_hex().serialize(serializer)
         } else {
             // See comment in deserialize.
             serializer.serialize_newtype_struct("AccountAddress", &self.0)
@@ -419,107 +623,169 @@ impl fmt::Display for AccountAddressParseError {
 
 impl std::error::Error for AccountAddressParseError {}
 
-#[derive(Clone, Deserialize, Serialize, JsonSchema, Eq, PartialEq, ::prost::Message)]
-#[serde(
-    rename_all = "camelCase",
-    rename = "TransactionBlockResponseOptions",
-    default
-)]
-pub struct SuiTransactionBlockResponseOptions {
-    /// Whether to show transaction input data. Default to be False
-    #[prost(bool, tag = "1")]
-    pub show_input: bool,
-    /// Whether to show bcs-encoded transaction input data
-    #[prost(bool, tag = "2")]
-    pub show_raw_input: bool,
-    /// Whether to show transaction effects. Default to be False
-    #[prost(bool, tag = "3")]
-    pub show_effects: bool,
-    /// Whether to show transaction events. Default to be False
-    #[prost(bool, tag = "4")]
-    pub show_events: bool,
-    /// Whether to show object_changes. Default to be False
-    #[prost(bool, tag = "5")]
-    pub show_object_changes: bool,
-    /// Whether to show balance_changes. Default to be False
-    #[prost(bool, tag = "6")]
-    pub show_balance_changes: bool,
-}
-
-#[derive(
-    Serialize, Deserialize, Clone, Debug, schemars::JsonSchema, PartialEq, ::prost::Enumeration,
-)]
-#[repr(i32)]
-pub enum ExecuteTransactionRequestType {
-    WaitForEffectsCert = 0,
-    WaitForLocalExecution = 1,
-}
-
-#[test]
-fn test_tx_data() {
-    let tx = SuiUnsignedMessage {
-        intent: Intent {
-            scope: IntentScope::TransactionData,
-            version: IntentVersion::V0,
-            app_id: AppId::Sui,
-        },
-        value: SuiRawTx::V1(TransactionDataV1 {
-            kind: TransactionKind::ProgrammableTransaction(ProgrammableTransaction {
-                inputs: vec![
-                    CallArg::Pure(
-                        [
-                            220, 187, 11, 184, 234, 241, 98, 187, 171, 145, 169, 184, 67, 107, 67,
-                            186, 211, 203, 227, 162, 86, 133, 31, 76, 71, 217, 115, 43, 120, 153,
-                            110, 136,
-                        ]
-                        .to_vec(),
-                    ),
-                    CallArg::Pure([0, 135, 147, 3, 0, 0, 0, 0].to_vec()),
-                ],
-                commands: vec![
-                    Command::SplitCoins(Argument::GasCoin, vec![Argument::Input(1)]),
-                    Command::TransferObjects(vec![Argument::Result(0)], Argument::Input(0)),
-                ],
-            }),
-            sender: Address([
-                176u8, 68, 127, 123, 138, 182, 23, 211, 149, 96, 166, 116, 129, 240, 19, 216, 179,
-                127, 50, 210, 94, 103, 91, 3, 218, 229, 135, 136, 28, 103, 152, 255,
-            ]),
-            gas_data: GasData {
-                payment: vec![(
-                    ObjectID(
-                        AccountAddress::from_hex_literal(
-                            "0x079ba634e53c8242cba33f917de10ea1279a70a57b3346d78c2f63115c6da01c",
-                        )
-                        .unwrap(),
-                    ),
-                    SequenceNumber(1381588),
-                    ObjectDigest(Digest([
-                        149, 232, 100, 17, 199, 117, 37, 188, 21, 39, 74, 251, 129, 212, 226, 202,
-                        137, 239, 169, 13, 54, 234, 143, 141, 155, 107, 226, 12, 203, 105, 67, 99,
-                    ])),
-                )],
-                owner: Address([
-                    176u8, 68, 127, 123, 138, 182, 23, 211, 149, 96, 166, 116, 129, 240, 19, 216,
-                    179, 127, 50, 210, 94, 103, 91, 3, 218, 229, 135, 136, 28, 103, 152, 255,
-                ]),
-                price: 1000,
-                budget: 10000000,
-            },
-            expiration: TransactionExpiration::None,
-        }),
+#[cfg(test)]
+mod tests {
+    use crate::transaction::{
+        AccountAddress, Address, AppId, Argument, CallArg, Command, Digest, GasData, Intent,
+        IntentScope, IntentVersion, NewTransfer, ObjectDigest, ObjectID, ProgrammableTransaction,
+        ProstObjectRef, RawTx, SequenceNumber, SuiRawTx, SuiTransfer, SuiTxType, TransactionDataV1,
+        TransactionExpiration, TransactionKind, TransferType,
     };
-    println!(
-        "intent base64: {:?}",
-        base64::encode(&bcs::to_bytes(&tx.intent).unwrap())
-    );
-    assert_eq!(
-        bcs::from_bytes::<Intent>(&base64::decode("AAAA").unwrap()).unwrap(),
-        tx.intent
-    );
+    use crate::{SuiTxInput, SuiUnsignedMessage};
 
-    let tx_data_base64 = base64::encode(&bcs::to_bytes(&tx.value).unwrap());
-    assert_eq!(tx_data_base64, "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHNQUFQAAAAAAIJXoZBHHdSW8FSdK+4HU4sqJ76kNNuqPjZtr4gzLaUNjsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/oAwAAAAAAAICWmAAAAAAAAA==");
-    let de_tx: SuiRawTx = bcs::from_bytes(&base64::decode(tx_data_base64).unwrap()).unwrap();
-    assert_eq!(de_tx, tx.value);
+    #[test]
+    fn test_raw_tx_data() {
+        let input = SuiTxInput {
+            tx_type: Some(SuiTxType::RawTx(
+                RawTx {
+                    intent: "AAAA".to_string(),
+                    tx_data: "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHNQUFQAAAAAAIJXoZBHHdSW8FSdK+4HU4sqJ76kNNuqPjZtr4gzLaUNjsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/oAwAAAAAAAICWmAAAAAAAAA==".to_string(),
+                }
+            ))
+        };
+        let tx = SuiUnsignedMessage {
+            intent: Intent {
+                scope: IntentScope::TransactionData,
+                version: IntentVersion::V0,
+                app_id: AppId::Sui,
+            },
+            value: SuiRawTx::V1(TransactionDataV1 {
+                kind: TransactionKind::ProgrammableTransaction(ProgrammableTransaction {
+                    inputs: vec![
+                        CallArg::Pure(
+                            [
+                                220, 187, 11, 184, 234, 241, 98, 187, 171, 145, 169, 184, 67, 107, 67,
+                                186, 211, 203, 227, 162, 86, 133, 31, 76, 71, 217, 115, 43, 120, 153,
+                                110, 136,
+                            ]
+                                .to_vec(),
+                        ),
+                        CallArg::Pure([0, 135, 147, 3, 0, 0, 0, 0].to_vec()),
+                    ],
+                    commands: vec![
+                        Command::SplitCoins(Argument::GasCoin, vec![Argument::Input(1)]),
+                        Command::TransferObjects(vec![Argument::Result(0)], Argument::Input(0)),
+                    ],
+                }),
+                sender: Address([
+                    176u8, 68, 127, 123, 138, 182, 23, 211, 149, 96, 166, 116, 129, 240, 19, 216, 179,
+                    127, 50, 210, 94, 103, 91, 3, 218, 229, 135, 136, 28, 103, 152, 255,
+                ]),
+                gas_data: GasData {
+                    payment: vec![(
+                        ObjectID(
+                            AccountAddress::from_hex_literal(
+                                "0x079ba634e53c8242cba33f917de10ea1279a70a57b3346d78c2f63115c6da01c",
+                            )
+                                .unwrap(),
+                        ),
+                        SequenceNumber(1381588),
+                        ObjectDigest(Digest([
+                            149, 232, 100, 17, 199, 117, 37, 188, 21, 39, 74, 251, 129, 212, 226, 202,
+                            137, 239, 169, 13, 54, 234, 143, 141, 155, 107, 226, 12, 203, 105, 67, 99,
+                        ])),
+                    )],
+                    owner: Address([
+                        176u8, 68, 127, 123, 138, 182, 23, 211, 149, 96, 166, 116, 129, 240, 19, 216,
+                        179, 127, 50, 210, 94, 103, 91, 3, 218, 229, 135, 136, 28, 103, 152, 255,
+                    ]),
+                    price: 1000,
+                    budget: 10000000,
+                },
+                expiration: TransactionExpiration::None,
+            }),
+        };
+
+        assert_eq!(SuiUnsignedMessage::try_from(&input).unwrap(), tx);
+
+        let bytes1 = bcs::to_bytes(&tx.intent).unwrap();
+        println!("bytes1: {:?}", bytes1);
+        println!(
+            "intent base64: {:?}",
+            base64::encode(&bcs::to_bytes(&tx.intent).unwrap())
+        );
+
+        assert_eq!(
+            bcs::from_bytes::<Intent>(&base64::decode("AAAA").unwrap()).unwrap(),
+            tx.intent
+        );
+
+        let tx_data_base64 = base64::encode(&bcs::to_bytes(&tx.value).unwrap());
+        assert_eq!(tx_data_base64, "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHNQUFQAAAAAAIJXoZBHHdSW8FSdK+4HU4sqJ76kNNuqPjZtr4gzLaUNjsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/oAwAAAAAAAICWmAAAAAAAAA==");
+        let de_tx: SuiRawTx = bcs::from_bytes(&base64::decode(tx_data_base64).unwrap()).unwrap();
+        assert_eq!(de_tx, tx.value);
+    }
+
+    #[test]
+    fn test_transfer_sui_tx_data() {
+        let sui_transfer = SuiTransfer {
+            amount: Some(60000000),
+        };
+        let transfer = NewTransfer {
+            transfer_type: Some(TransferType::Sui(sui_transfer)),
+            recipient: "0xdcbb0bb8eaf162bbab91a9b8436b43bad3cbe3a256851f4c47d9732b78996e88"
+                .to_string(),
+            sender: "0xb0447f7b8ab617d39560a67481f013d8b37f32d25e675b03dae587881c6798ff"
+                .to_string(),
+            gas_payment: ProstObjectRef {
+                object_id: hex::decode(
+                    "079ba634e53c8242cba33f917de10ea1279a70a57b3346d78c2f63115c6da01c",
+                )
+                .unwrap(),
+                seq_num: 2641230,
+                object_digest: bs58::decode("HBLfbA1EqRUAWWMeVZa5bgKyXv3VS1GnCZcKCZYLtGLu")
+                    .into_vec()
+                    .unwrap(),
+            },
+            gas_budget: 10000000,
+            gas_price: 999,
+        };
+        let input = SuiTxInput {
+            tx_type: Some(SuiTxType::Transfer(transfer)),
+        };
+        let unsigned_tx = SuiUnsignedMessage::try_from(&input).unwrap();
+        println!("unsigned_tx: {:?}", unsigned_tx);
+        let tx_data_base64 = base64::encode(&bcs::to_bytes(&unsigned_tx.value).unwrap());
+        assert_eq!(tx_data_base64, "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAAIAIeTAwAAAAACAgABAQEAAQECAAABAACwRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/wEHm6Y05TyCQsujP5F94Q6hJ5pwpXszRteML2MRXG2gHE5NKAAAAAAAIPBhCNlgeWQXkO2bJZJLJYPgkB4q8//5R9UHFiLTiPmmsER/e4q2F9OVYKZ0gfAT2LN/MtJeZ1sD2uWHiBxnmP/nAwAAAAAAAICWmAAAAAAAAA==")
+    }
+
+    #[test]
+    fn test_transfer_object_tx_data() {
+        let obj_transfer = ProstObjectRef {
+            object_id: hex::decode(
+                "079ba634e53c8242cba33f917de10ea1279a70a57b3346d78c2f63115c6da01c",
+            )
+            .unwrap(),
+            seq_num: 2641230,
+            object_digest: bs58::decode("HBLfbA1EqRUAWWMeVZa5bgKyXv3VS1GnCZcKCZYLtGLu")
+                .into_vec()
+                .unwrap(),
+        };
+        let transfer = NewTransfer {
+            transfer_type: Some(TransferType::Object(obj_transfer)),
+            recipient: "0xdcbb0bb8eaf162bbab91a9b8436b43bad3cbe3a256851f4c47d9732b78996e88"
+                .to_string(),
+            sender: "0xb0447f7b8ab617d39560a67481f013d8b37f32d25e675b03dae587881c6798ff"
+                .to_string(),
+            gas_payment: ProstObjectRef {
+                object_id: hex::decode(
+                    "079ba634e53c8242cba33f917de10ea1279a70a57b3346d78c2f63115c6da01c",
+                )
+                .unwrap(),
+                seq_num: 2641230,
+                object_digest: bs58::decode("HBLfbA1EqRUAWWMeVZa5bgKyXv3VS1GnCZcKCZYLtGLu")
+                    .into_vec()
+                    .unwrap(),
+            },
+            gas_budget: 10000000,
+            gas_price: 998,
+        };
+        let input = SuiTxInput {
+            tx_type: Some(SuiTxType::Transfer(transfer)),
+        };
+        let unsigned_tx = SuiUnsignedMessage::try_from(&input).unwrap();
+        println!("unsigned_tx: {:?}", unsigned_tx);
+        let tx_data_base64 = base64::encode(&bcs::to_bytes(&unsigned_tx.value).unwrap());
+        assert_eq!(tx_data_base64, "AAACACDcuwu46vFiu6uRqbhDa0O608vjolaFH0xH2XMreJluiAEAB5umNOU8gkLLoz+RfeEOoSeacKV7M0bXjC9jEVxtoBxOTSgAAAAAACDwYQjZYHlkF5DtmyWSSyWD4JAeKvP/+UfVBxYi04j5pgEBAQEBAAEAALBEf3uKthfTlWCmdIHwE9izfzLSXmdbA9rlh4gcZ5j/AQebpjTlPIJCy6M/kX3hDqEnmnClezNG14wvYxFcbaAcTk0oAAAAAAAg8GEI2WB5ZBeQ7Zslkkslg+CQHirz//lH1QcWItOI+aawRH97irYX05VgpnSB8BPYs38y0l5nWwPa5YeIHGeY/+YDAAAAAAAAgJaYAAAAAAAA".to_string());
+    }
 }
