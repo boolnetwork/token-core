@@ -55,4 +55,8 @@ fn main() {
 
     env::set_var("OUT_DIR", "../tcx-aptos/src");
     prost_build::compile_protos(&["src/aptos.proto"], &["src/"]).unwrap();
+
+    // tcx-sui
+    env::set_var("OUT_DIR", "../tcx-sui/src");
+    prost_build::compile_protos(&["src/sui.proto"], &["src/"]).unwrap();
 }

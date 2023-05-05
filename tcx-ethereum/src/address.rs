@@ -23,11 +23,11 @@ impl Address for EthereumAddress {
             return false;
         };
         if address.starts_with("0x") {
-            if address.len() != 22 {
+            if address.len() != 42 {
                 return false;
             };
         } else {
-            if address.len() != 20 {
+            if address.len() != 40 {
                 return false;
             };
         };
