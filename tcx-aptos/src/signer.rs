@@ -1,6 +1,7 @@
 #![allow(dead_code)]
+use crate::transaction::aptos_tx_in::AptosTxType;
 use crate::Error;
-use crate::{vec_bytes, AptosTxIn, AptosTxOut, InstanceType, ProtoEntryFunction};
+use crate::{vec_bytes, AptosTxIn, AptosTxOut};
 use hex::FromHex;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
@@ -28,33 +29,29 @@ impl TryFrom<&AptosTxIn> for RawTransaction {
     type Error = crate::Error;
 
     fn try_from(input: &AptosTxIn) -> core::result::Result<RawTransaction, self::Error> {
-        let sender = AccountAddress(
-            <[u8; 32]>::try_from(input.sender.as_slice())
-                .map_err(|_| Error::AccountAddressParseError)?,
-        );
-        let call_path = input
-            .call_path
-            .clone()
-            .unwrap_or(ProtoEntryFunction::transfer_aptos_coin());
-        let ty_args = convert_to_type_tag(&call_path.instance)?;
-        let payload = TransactionPayload::EntryFunction(EntryFunction::new(
-            ModuleId::new(
-                AccountAddress::from_hex_literal(&call_path.contract_addr)?,
-                call_path.module,
-            ),
-            call_path.function,
-            ty_args,
-            input.args.clone(),
-        ));
-        Ok(RawTransaction {
-            sender,
-            sequence_number: input.sequence_number.clone(),
-            payload,
-            max_gas_amount: input.max_gas_amount.clone(),
-            gas_unit_price: input.gas_unit_price.clone(),
-            expiration_timestamp_secs: input.expiration_timestamp_secs.clone(),
-            chain_id: input.chain_id as u8,
-        })
+        let unsigned_tx = match input.aptos_tx_type.as_ref().ok_or(Error::EmptyAptosTx)? {
+            AptosTxType::RawTx(data) => {
+                let data = data.strip_prefix("0x").unwrap_or(&data);
+                let tx: RawTransaction =
+                    bcs::from_bytes(&hex::decode(data).map_err(|_| Error::HexDecodeFailed.into())?)
+                        .map_err(|_| Error::BcsDecodeFailed.into())?;
+                tx
+            }
+            AptosTxType::Transfer(transfer) => {
+                let entry_fun =
+                    EntryFunction::transfer_aptos_coin(transfer.to.clone(), transfer.amount)?;
+                RawTransaction {
+                    sender: AccountAddress::from_hex_literal(&transfer.sender)?,
+                    sequence_number: transfer.sequence_number,
+                    payload: TransactionPayload::EntryFunction(entry_fun),
+                    max_gas_amount: transfer.max_gas_amount,
+                    gas_unit_price: transfer.gas_unit_price,
+                    expiration_timestamp_secs: transfer.expiration_timestamp_secs,
+                    chain_id: transfer.chain_id as u8,
+                }
+            }
+        };
+        Ok(unsigned_tx)
     }
 }
 
@@ -117,6 +114,27 @@ impl EntryFunction {
             args,
         }
     }
+
+    fn transfer_aptos_coin(to: String, amount: u64) -> core::result::Result<Self, self::Error> {
+        let module = ModuleId::new(AccountAddress::from_hex_literal("0x1")?, "coin".to_string());
+        let coin = StructTag {
+            address: AccountAddress::from_hex_literal("0x1")?,
+            module: "aptos_coin".to_string(),
+            name: "AptosCoin".to_string(),
+            type_params: vec![],
+        };
+        let receiver = AccountAddress::from_hex_literal(&to)?;
+        let entry_fun = Self {
+            module,
+            function: "transfer".to_string(),
+            ty_args: vec![TypeTag::Struct(coin)],
+            args: vec![
+                bcs::to_bytes(&receiver).map_err(|_| Error::BcsEncodeFailed)?,
+                bcs::to_bytes(&amount).map_err(|_| Error::BcsEncodeFailed)?,
+            ],
+        };
+        Ok(entry_fun)
+    }
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ModuleId {
@@ -160,22 +178,6 @@ pub enum TransactionAuthenticator {
     MultiAgent {},
 }
 
-impl ProtoEntryFunction {
-    fn transfer_aptos_coin() -> Self {
-        ProtoEntryFunction {
-            contract_addr: "0x1".to_string(),
-            module: "coin".to_string(),
-            function: "transfer".to_string(),
-            instance: vec![InstanceType {
-                contract_addr: "0x1".to_string(),
-                module: "aptos_coin".to_string(),
-                name: "AptosCoin".to_string(),
-                type_params: vec![],
-            }],
-        }
-    }
-}
-
 impl TransactionSigner<AptosTxIn, AptosTxOut> for Keystore {
     fn sign_transaction(
         &mut self,
@@ -202,22 +204,6 @@ impl TransactionSigner<AptosTxIn, AptosTxOut> for Keystore {
     }
 }
 
-fn convert_to_type_tag(
-    instances: &Vec<InstanceType>,
-) -> core::result::Result<Vec<TypeTag>, crate::Error> {
-    let mut type_params = Vec::new();
-    for instance in instances {
-        let struct_tag = StructTag {
-            address: AccountAddress::from_hex_literal(&instance.contract_addr)?,
-            module: instance.module.clone(),
-            name: instance.name.clone(),
-            type_params: convert_to_type_tag(&instance.type_params)?,
-        };
-        type_params.push(TypeTag::Struct(struct_tag))
-    }
-    Ok(type_params)
-}
-
 fn tx_prefix_hash() -> Vec<u8> {
     let mut hasher = Sha3_256::new();
     hasher.update(TRANSACTION_PREFIX.as_bytes());
@@ -229,36 +215,28 @@ mod tests {
     use crate::signer::{
         AccountAddress, RawTransaction, SignedTransaction, TransactionAuthenticator,
     };
-    use crate::{AptosAddress, AptosTxIn, InstanceType, ProtoEntryFunction};
+    use crate::transaction::aptos_tx_in::AptosTxType;
+    use crate::{AptosAddress, AptosTxIn, NewTransfer};
     use sha3::{Digest, Sha3_256};
     use tcx_chain::{Keystore, Metadata, TransactionSigner};
     use tcx_constants::{CoinInfo, CurveType};
+
     #[test]
-    fn test_input_convert_to_raw_tx() {
-        let call = ProtoEntryFunction::transfer_aptos_coin();
+    fn test_transfer_input_convert_to_raw_tx() {
         let input = AptosTxIn {
-            sender: AccountAddress::from_hex_literal(
-                "0x7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f",
-            )
-            .unwrap()
-            .0
-            .to_vec(),
-            sequence_number: 7,
-            call_path: Some(call),
-            args: vec![
-                bcs::to_bytes(
-                    &AccountAddress::from_hex_literal(
-                        "0x90521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e7",
-                    )
-                    .unwrap(),
-                )
-                .unwrap(),
-                bcs::to_bytes(&10000000u64).unwrap(),
-            ],
-            max_gas_amount: 5000,
-            gas_unit_price: 1000,
-            expiration_timestamp_secs: 1979382887679336,
-            chain_id: 2,
+            aptos_tx_type: Some(AptosTxType::Transfer(NewTransfer {
+                sender: "0x7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f"
+                    .to_string(),
+                sequence_number: 7,
+                args: vec![],
+                to: "0x90521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e7"
+                    .to_string(),
+                amount: 10000000u64,
+                max_gas_amount: 5000,
+                gas_unit_price: 1000,
+                expiration_timestamp_secs: 1979382887679336,
+                chain_id: 2,
+            })),
         };
         let raw_tx = RawTransaction::try_from(&input).unwrap();
         println!("raw_tx: {:?}", raw_tx);
@@ -274,9 +252,19 @@ mod tests {
             128, 150, 152, 0, 0, 0, 0, 0, 136, 19, 0, 0, 0, 0, 0, 0, 232, 3, 0, 0, 0, 0, 0, 0, 104,
             5, 229, 253, 60, 8, 7, 0, 2,
         ];
+        println!("hex: {:?}", hex::encode(&valid_tx));
         assert_eq!(bcs::to_bytes(&raw_tx).unwrap(), valid_tx.to_vec());
     }
 
+    #[test]
+    fn test_raw_msg_input_convert_to_raw_tx() {
+        let input = AptosTxIn {
+            aptos_tx_type: Some(AptosTxType::RawTx(
+                "7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f070000000000000002000000000000000000000000000000000000000000000000000000000000000104636f696e087472616e73666572010700000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e094170746f73436f696e00022090521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e70880969800000000008813000000000000e8030000000000006805e5fd3c08070002".to_string()
+            ))
+        };
+        RawTransaction::try_from(&input).unwrap();
+    }
     #[test]
     fn test_sign_aptos_raw_tx() {
         let mut ks = Keystore::from_private_key(
@@ -295,30 +283,11 @@ mod tests {
         };
         let account = ks.derive_coin::<AptosAddress>(&coin_info).unwrap().clone();
         println!("account: {:?}", account);
-        let call = ProtoEntryFunction::transfer_aptos_coin();
+
         let tx_input = AptosTxIn {
-            sender: AccountAddress::from_hex_literal(
-                "0x7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f",
-            )
-            .unwrap()
-            .0
-            .to_vec(),
-            sequence_number: 7,
-            call_path: Some(call),
-            args: vec![
-                bcs::to_bytes(
-                    &AccountAddress::from_hex_literal(
-                        "0x90521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e7",
-                    )
-                    .unwrap(),
-                )
-                .unwrap(),
-                bcs::to_bytes(&10000000u64).unwrap(),
-            ],
-            max_gas_amount: 5000,
-            gas_unit_price: 1000,
-            expiration_timestamp_secs: 1979382887679336,
-            chain_id: 2,
+            aptos_tx_type: Some(AptosTxType::RawTx(
+                "7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f070000000000000002000000000000000000000000000000000000000000000000000000000000000104636f696e087472616e73666572010700000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e094170746f73436f696e00022090521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e70880969800000000008813000000000000e8030000000000006805e5fd3c08070002".to_string()
+            ))
         };
         println!("input: {:?}", tx_input);
 

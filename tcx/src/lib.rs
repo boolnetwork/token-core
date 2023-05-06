@@ -185,7 +185,7 @@ mod tests {
     use ethereum_types::U256;
     use sp_core::Public as TraitPublic;
     use sp_runtime::traits::Verify;
-    use tcx_aptos::{AptosTxIn, AptosTxOut};
+    use tcx_aptos::{AptosTxIn, AptosTxOut, AptosTxType};
     use tcx_btc_fork::BtcForkSignedTxOutput;
     use tcx_ckb::{CachedCell, CellInput, CkbTxInput, CkbTxOutput, OutPoint, Script, Witness};
     use tcx_ethereum::{EthereumTxIn, EthereumTxOut};
@@ -3098,26 +3098,9 @@ mod tests {
             let ret = call_api("keystore_common_derive", param).unwrap();
             let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
             let input = AptosTxIn {
-                sender: hex::decode(
-                    "7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f",
-                )
-                .unwrap(),
-                sequence_number: 7,
-                call_path: None,
-                args: vec![
-                    // to
-                    vec![
-                        144, 82, 29, 220, 140, 195, 166, 238, 4, 149, 63, 221, 43, 188, 11, 76,
-                        242, 137, 157, 168, 195, 115, 63, 24, 112, 206, 232, 230, 153, 151, 38,
-                        231,
-                    ],
-                    // amount
-                    vec![128, 150, 152, 0, 0, 0, 0, 0],
-                ],
-                max_gas_amount: 5000,
-                gas_unit_price: 1000,
-                expiration_timestamp_secs: 1979382887679336,
-                chain_id: 2,
+                aptos_tx_type: Some(AptosTxType::RawTx(
+                    "7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f070000000000000002000000000000000000000000000000000000000000000000000000000000000104636f696e087472616e73666572010700000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e094170746f73436f696e00022090521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e70880969800000000008813000000000000e8030000000000006805e5fd3c08070002".to_string()
+                ))
             };
             let tx = SignParam {
                 id: wallet.id.to_string(),
