@@ -4,20 +4,24 @@ use snarkvm_console::account::{ComputeKey, ViewKey};
 use snarkvm_console::network::Network;
 use std::marker::PhantomData;
 use std::str::FromStr;
+use tcx_constants::Result;
 
 pub struct AleoViewKey<N: Network>(ViewKey<N>);
 
 impl<N: Network> AleoViewKey<N> {
-    fn from_private_key(private_key: AleoPrivateKey<N>) -> AleoViewKey<N> {
+    fn from_private_key(private_key: AleoPrivateKey<N>) -> Result<AleoViewKey<N>> {
         // Derive the compute key.
-        let compute_key = ComputeKey::<N>::try_from(private_key)?;
+        let compute_key = private_key.to_compute_key()?;
+        Ok(AleoViewKey(ViewKey::<N>(
+            private_key.sk_sig() + private_key.r_sig() + compute_key.sk_prf(),
+        )))
     }
 }
 
 impl<N: Network> FromStr for AleoViewKey<N> {
     type Err = failure::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let vk = ViewKey::<N>::from_str(s).map_err(|_| Error::InvalidViewKey)?;
         Ok(AleoViewKey(vk))
     }
