@@ -16,7 +16,7 @@ impl<N: Network> AleoAddress<N> {
         Self(address)
     }
 
-    fn from_view_key(view_key: &AleoViewKey<N>) -> AleoAddress<N> {
+    pub fn from_view_key(view_key: &AleoViewKey<N>) -> AleoAddress<N> {
         view_key.to_address()
     }
 }
