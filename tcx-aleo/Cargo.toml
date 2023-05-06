@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tcx-constants = { path = "../tcx-constants" }
+snarkvm-console = { git = "https://github.com/AleoHQ/snarkVM.git", branch = "testnet3", features = ["account"] }
+failure = "0.1.5"

@@ -1,14 +1,6 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use snarkvm_console::network::Testnet3;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod address;
+mod viewkey;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+type CurrentNetwork = Testnet3;
