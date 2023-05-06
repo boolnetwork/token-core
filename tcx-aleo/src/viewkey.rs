@@ -1,8 +1,10 @@
+use crate::Error;
 use snarkvm_console::account::ViewKey;
 use snarkvm_console::network::Network;
+use std::marker::PhantomData;
 use std::str::FromStr;
 
-pub struct AleoViewKey<N: Network>(pub String);
+pub struct AleoViewKey<N: Network>(PhantomData<N>, pub String);
 
 impl<N: Network> AleoViewKey<N> {}
 
@@ -10,8 +12,8 @@ impl<N: Network> FromStr for AleoViewKey<N> {
     type Err = failure::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let vk = ViewKey::<N>::from_str(s).map_err(|err| failure::Error::from(err));
-        Ok(AleoViewKey(vk.to_string()))
+        let vk = ViewKey::<N>::from_str(s).map_err(|_| Error::InvalidViewKey)?;
+        Ok(AleoViewKey(PhantomData, vk.to_string()))
     }
 }
 
