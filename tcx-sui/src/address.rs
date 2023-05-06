@@ -5,16 +5,16 @@ use tcx_constants::{CoinInfo, Result};
 use tcx_primitive::TypedPublicKey;
 
 pub const DEFAULT_HASH_SIZE: usize = 32;
-pub const ED25519_FALG: u8 = 0;
-pub const SECP256K1_FALG: u8 = 1;
+pub const ED25519_FLAG: u8 = 0;
+pub const SECP256K1_FLAG: u8 = 1;
 
 pub struct SuiAddress();
 
 impl Address for SuiAddress {
     fn from_public_key(public_key: &TypedPublicKey, _coin: &CoinInfo) -> Result<String> {
         let flag = match public_key {
-            TypedPublicKey::Ed25519(_) => ED25519_FALG,
-            TypedPublicKey::Secp256k1(_) => SECP256K1_FALG,
+            TypedPublicKey::Ed25519(_) => ED25519_FLAG,
+            TypedPublicKey::Secp256k1(_) => SECP256K1_FLAG,
             _ => return Err(Error::AddressParseError.into()),
         };
         let mut result = [0u8; 32];

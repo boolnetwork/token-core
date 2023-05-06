@@ -4,7 +4,7 @@ mod transaction;
 mod vec_bytes;
 
 pub use crate::address::AptosAddress;
-pub use crate::transaction::{AptosTxIn, AptosTxOut};
+pub use crate::transaction::{AptosTxIn, AptosTxOut, InstanceType, ProtoEntryFunction};
 #[macro_use]
 extern crate failure;
 #[derive(Fail, Debug, PartialEq)]

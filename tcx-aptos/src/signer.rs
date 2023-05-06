@@ -1,11 +1,16 @@
+#![allow(dead_code)]
 use crate::Error;
-use crate::{vec_bytes, AptosTxIn, AptosTxOut};
+use crate::{vec_bytes, AptosTxIn, AptosTxOut, InstanceType, ProtoEntryFunction};
 use hex::FromHex;
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Sha3_256};
 use tcx_chain::{Keystore, Result, TransactionSigner};
+
+const TRANSACTION_PREFIX: &str = "APTOS::RawTransaction";
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct SignedTransaction {
-    pub raw_txn: RawTransaction,
+    pub raw_tx: RawTransaction,
     pub authenticator: TransactionAuthenticator,
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -18,13 +23,48 @@ pub struct RawTransaction {
     expiration_timestamp_secs: u64,
     chain_id: u8,
 }
+
+impl TryFrom<&AptosTxIn> for RawTransaction {
+    type Error = crate::Error;
+
+    fn try_from(input: &AptosTxIn) -> core::result::Result<RawTransaction, self::Error> {
+        let sender = AccountAddress(
+            <[u8; 32]>::try_from(input.sender.as_slice())
+                .map_err(|_| Error::AccountAddressParseError)?,
+        );
+        let call_path = input
+            .call_path
+            .clone()
+            .unwrap_or(ProtoEntryFunction::transfer_aptos_coin());
+        let ty_args = convert_to_type_tag(&call_path.instance)?;
+        let payload = TransactionPayload::EntryFunction(EntryFunction::new(
+            ModuleId::new(
+                AccountAddress::from_hex_literal(&call_path.contract_addr)?,
+                call_path.module,
+            ),
+            call_path.function,
+            ty_args,
+            input.args.clone(),
+        ));
+        Ok(RawTransaction {
+            sender,
+            sequence_number: input.sequence_number.clone(),
+            payload,
+            max_gas_amount: input.max_gas_amount.clone(),
+            gas_unit_price: input.gas_unit_price.clone(),
+            expiration_timestamp_secs: input.expiration_timestamp_secs.clone(),
+            chain_id: input.chain_id as u8,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AccountAddress([u8; 32]);
 impl AccountAddress {
     pub const fn new(address: [u8; 32]) -> Self {
         Self(address)
     }
-    pub fn from_hex_literal(literal: &str) -> Result<Self> {
+    pub fn from_hex_literal(literal: &str) -> core::result::Result<Self, crate::Error> {
         if !literal.starts_with("0x") {
             return Err(Error::AccountAddressParseError.into());
         }
@@ -43,7 +83,7 @@ impl AccountAddress {
             AccountAddress::from_hex(&literal[2..])
         }
     }
-    pub fn from_hex<T: AsRef<[u8]>>(hex: T) -> Result<Self> {
+    pub fn from_hex<T: AsRef<[u8]>>(hex: T) -> core::result::Result<Self, crate::Error> {
         <[u8; 32]>::from_hex(hex)
             .map_err(|_| Error::AccountAddressParseError.into())
             .map(Self)
@@ -106,7 +146,8 @@ pub struct StructTag {
     pub name: String,
     pub type_params: Vec<TypeTag>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TransactionAuthenticator {
     /// Single signature
     Ed25519 {
@@ -119,6 +160,22 @@ pub enum TransactionAuthenticator {
     MultiAgent {},
 }
 
+impl ProtoEntryFunction {
+    fn transfer_aptos_coin() -> Self {
+        ProtoEntryFunction {
+            contract_addr: "0x1".to_string(),
+            module: "coin".to_string(),
+            function: "transfer".to_string(),
+            instance: vec![InstanceType {
+                contract_addr: "0x1".to_string(),
+                module: "aptos_coin".to_string(),
+                name: "AptosCoin".to_string(),
+                type_params: vec![],
+            }],
+        }
+    }
+}
+
 impl TransactionSigner<AptosTxIn, AptosTxOut> for Keystore {
     fn sign_transaction(
         &mut self,
@@ -126,42 +183,15 @@ impl TransactionSigner<AptosTxIn, AptosTxOut> for Keystore {
         address: &str,
         tx: &AptosTxIn,
     ) -> Result<AptosTxOut> {
-        let str: Vec<&str> = tx.coin_type.split("::").collect();
-        let coin = StructTag {
-            address: AccountAddress::from_hex_literal(str[0])?,
-            module: str[1].to_string(),
-            name: str[2].to_string(),
-            type_params: vec![],
-        };
-        let mut account_one = [0u8; 32];
-        account_one[31] = 1;
-        let payload = TransactionPayload::EntryFunction(EntryFunction::new(
-            ModuleId::new(AccountAddress::new(account_one), "coin".to_string()),
-            "transfer".to_string(),
-            vec![TypeTag::Struct(coin)],
-            vec![tx.to.to_vec(), bcs::to_bytes(&tx.amount)?],
-        ));
-        let raw_tx = RawTransaction {
-            sender: AccountAddress(<[u8; 32]>::try_from(tx.sender.as_slice())?),
-            sequence_number: tx.sequence_number.clone(),
-            payload,
-            max_gas_amount: tx.max_gas_amount.clone(),
-            gas_unit_price: tx.gas_unit_price.clone(),
-            expiration_timestamp_secs: tx.expiration_timestamp_secs.clone(),
-            chain_id: tx.chain_id.clone() as u8,
-        };
-        //hash seed of raw transaction
-        let mut bytes: Vec<u8> = [
-            181, 233, 125, 176, 127, 160, 189, 14, 85, 152, 170, 54, 67, 169, 188, 111, 102, 147,
-            189, 220, 26, 159, 236, 158, 103, 74, 70, 30, 170, 0, 177, 147,
-        ]
-        .to_vec();
-        bcs::serialize_into(&mut bytes, &raw_tx)?;
+        let raw_tx = RawTransaction::try_from(tx)?;
+        // note: msg_to_sign = prefix_bytes | bcs_bytes_of_raw_transaction.
+        let mut msg_to_sign = tx_prefix_hash();
+        bcs::serialize_into(&mut msg_to_sign, &raw_tx)?;
         let sk = self.find_private_key(symbol, address)?;
-        let sig = sk.sign(&bytes)?;
+        let sig = sk.sign(&msg_to_sign)?;
         let pk = sk.public_key().to_bytes();
         let signed_tx = SignedTransaction {
-            raw_txn: raw_tx,
+            raw_tx,
             authenticator: TransactionAuthenticator::Ed25519 {
                 public_key: pk,
                 signature: sig,
@@ -169,5 +199,147 @@ impl TransactionSigner<AptosTxIn, AptosTxOut> for Keystore {
         };
         let serialized_tx = bcs::to_bytes(&signed_tx)?;
         Ok(AptosTxOut { tx: serialized_tx })
+    }
+}
+
+fn convert_to_type_tag(
+    instances: &Vec<InstanceType>,
+) -> core::result::Result<Vec<TypeTag>, crate::Error> {
+    let mut type_params = Vec::new();
+    for instance in instances {
+        let struct_tag = StructTag {
+            address: AccountAddress::from_hex_literal(&instance.contract_addr)?,
+            module: instance.module.clone(),
+            name: instance.name.clone(),
+            type_params: convert_to_type_tag(&instance.type_params)?,
+        };
+        type_params.push(TypeTag::Struct(struct_tag))
+    }
+    Ok(type_params)
+}
+
+fn tx_prefix_hash() -> Vec<u8> {
+    let mut hasher = Sha3_256::new();
+    hasher.update(TRANSACTION_PREFIX.as_bytes());
+    hasher.finalize().to_vec()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::signer::{
+        AccountAddress, RawTransaction, SignedTransaction, TransactionAuthenticator,
+    };
+    use crate::{AptosAddress, AptosTxIn, InstanceType, ProtoEntryFunction};
+    use sha3::{Digest, Sha3_256};
+    use tcx_chain::{Keystore, Metadata, TransactionSigner};
+    use tcx_constants::{CoinInfo, CurveType};
+    #[test]
+    fn test_input_convert_to_raw_tx() {
+        let call = ProtoEntryFunction::transfer_aptos_coin();
+        let input = AptosTxIn {
+            sender: AccountAddress::from_hex_literal(
+                "0x7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f",
+            )
+            .unwrap()
+            .0
+            .to_vec(),
+            sequence_number: 7,
+            call_path: Some(call),
+            args: vec![
+                bcs::to_bytes(
+                    &AccountAddress::from_hex_literal(
+                        "0x90521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e7",
+                    )
+                    .unwrap(),
+                )
+                .unwrap(),
+                bcs::to_bytes(&10000000u64).unwrap(),
+            ],
+            max_gas_amount: 5000,
+            gas_unit_price: 1000,
+            expiration_timestamp_secs: 1979382887679336,
+            chain_id: 2,
+        };
+        let raw_tx = RawTransaction::try_from(&input).unwrap();
+        println!("raw_tx: {:?}", raw_tx);
+        let valid_tx = [
+            123, 184, 89, 138, 147, 8, 155, 87, 176, 219, 7, 48, 61, 77, 254, 134, 4, 195, 200,
+            212, 13, 110, 240, 182, 194, 53, 139, 170, 95, 211, 147, 63, 7, 0, 0, 0, 0, 0, 0, 0, 2,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1, 4, 99, 111, 105, 110, 8, 116, 114, 97, 110, 115, 102, 101, 114, 1, 7, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            10, 97, 112, 116, 111, 115, 95, 99, 111, 105, 110, 9, 65, 112, 116, 111, 115, 67, 111,
+            105, 110, 0, 2, 32, 144, 82, 29, 220, 140, 195, 166, 238, 4, 149, 63, 221, 43, 188, 11,
+            76, 242, 137, 157, 168, 195, 115, 63, 24, 112, 206, 232, 230, 153, 151, 38, 231, 8,
+            128, 150, 152, 0, 0, 0, 0, 0, 136, 19, 0, 0, 0, 0, 0, 0, 232, 3, 0, 0, 0, 0, 0, 0, 104,
+            5, 229, 253, 60, 8, 7, 0, 2,
+        ];
+        assert_eq!(bcs::to_bytes(&raw_tx).unwrap(), valid_tx.to_vec());
+    }
+
+    #[test]
+    fn test_sign_aptos_raw_tx() {
+        let mut ks = Keystore::from_private_key(
+            "6E26EBB57A01EE47158050E6980DC639E66129335ACE114ABBF9FD5D939049D6",
+            "Password",
+            Metadata::default(),
+            "",
+        );
+        ks.unlock_by_password("Password").unwrap();
+        let coin_info = CoinInfo {
+            coin: "APTOS".to_string(),
+            derivation_path: "".to_string(),
+            curve: CurveType::ED25519,
+            network: "MAINNET".to_string(),
+            seg_wit: "".to_string(),
+        };
+        let account = ks.derive_coin::<AptosAddress>(&coin_info).unwrap().clone();
+        println!("account: {:?}", account);
+        let call = ProtoEntryFunction::transfer_aptos_coin();
+        let tx_input = AptosTxIn {
+            sender: AccountAddress::from_hex_literal(
+                "0x7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f",
+            )
+            .unwrap()
+            .0
+            .to_vec(),
+            sequence_number: 7,
+            call_path: Some(call),
+            args: vec![
+                bcs::to_bytes(
+                    &AccountAddress::from_hex_literal(
+                        "0x90521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e7",
+                    )
+                    .unwrap(),
+                )
+                .unwrap(),
+                bcs::to_bytes(&10000000u64).unwrap(),
+            ],
+            max_gas_amount: 5000,
+            gas_unit_price: 1000,
+            expiration_timestamp_secs: 1979382887679336,
+            chain_id: 2,
+        };
+        println!("input: {:?}", tx_input);
+
+        let output = ks
+            .sign_transaction("APTOS", &account.address, &tx_input)
+            .unwrap();
+        println!("output: {:?}", output);
+
+        let signed_tx: SignedTransaction = bcs::from_bytes(&output.tx).unwrap();
+        let valid_signature = TransactionAuthenticator::Ed25519 {
+            public_key: vec![
+                79, 175, 249, 168, 47, 87, 208, 99, 222, 47, 184, 22, 217, 86, 17, 163, 219, 210,
+                20, 67, 49, 111, 195, 153, 16, 102, 112, 117, 187, 24, 145, 189,
+            ],
+            signature: vec![
+                16, 85, 118, 133, 210, 232, 234, 125, 209, 178, 6, 79, 251, 34, 178, 158, 178, 224,
+                18, 172, 211, 157, 29, 210, 111, 214, 19, 87, 152, 247, 116, 140, 26, 112, 163,
+                108, 171, 47, 163, 156, 244, 173, 61, 63, 148, 195, 232, 189, 15, 18, 255, 76, 5,
+                41, 85, 29, 90, 195, 71, 182, 184, 176, 68, 5,
+            ],
+        };
+        assert_eq!(signed_tx.authenticator, valid_signature);
     }
 }

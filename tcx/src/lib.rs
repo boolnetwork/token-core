@@ -3066,7 +3066,7 @@ mod tests {
     }
     fn import_aptos_pk_store() -> WalletResult {
         let param: PrivateKeyStoreImportParam = PrivateKeyStoreImportParam {
-            private_key: "f6d6d710ddac039b3cd26d19e30576124daf6658420cdd9470ad14ca7b2f2017"
+            private_key: "6E26EBB57A01EE47158050E6980DC639E66129335ACE114ABBF9FD5D939049D6"
                 .to_string(),
             password: TEST_PASSWORD.to_string(),
             name: "import_aptos_pk_store".to_string(),
@@ -3085,7 +3085,7 @@ mod tests {
             let derivation = Derivation {
                 chain_type: "APTOS".to_string(),
                 path: "m/44'/637'/0'/0'/0'".to_string(),
-                network: "MAINNET".to_string(),
+                network: "TESTNET".to_string(),
                 seg_wit: "".to_string(),
                 chain_id: "".to_string(),
                 curve: "ED25519".to_string(),
@@ -3097,23 +3097,28 @@ mod tests {
             };
             let ret = call_api("keystore_common_derive", param).unwrap();
             let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
-
             let input = AptosTxIn {
                 sender: hex::decode(
-                    "43f6b2060e2d501e41f6c16e6c4c14c226760e27bb17fc5856072f57fb50132b",
+                    "7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f",
                 )
                 .unwrap(),
-                sequence_number: 1,
-                coin_type: "0x1::aptos_coin::AptosCoin".to_string(),
-                to: hex::decode("bc53b90b9283ee484850ff6a47a12e48a6292907212ac50713f112e0a8c3efd2")
-                    .unwrap(),
-                amount: 1000,
+                sequence_number: 7,
+                call_path: None,
+                args: vec![
+                    // to
+                    vec![
+                        144, 82, 29, 220, 140, 195, 166, 238, 4, 149, 63, 221, 43, 188, 11, 76,
+                        242, 137, 157, 168, 195, 115, 63, 24, 112, 206, 232, 230, 153, 151, 38,
+                        231,
+                    ],
+                    // amount
+                    vec![128, 150, 152, 0, 0, 0, 0, 0],
+                ],
                 max_gas_amount: 5000,
-                gas_unit_price: 100,
-                expiration_timestamp_secs: 1670815226,
-                chain_id: 40,
+                gas_unit_price: 1000,
+                expiration_timestamp_secs: 1979382887679336,
+                chain_id: 2,
             };
-
             let tx = SignParam {
                 id: wallet.id.to_string(),
                 key: Some(Key::Password(TEST_PASSWORD.to_string())),
@@ -3127,13 +3132,29 @@ mod tests {
 
             let ret = call_api("sign_tx", tx).unwrap();
             let output: AptosTxOut = AptosTxOut::decode(ret.as_slice()).unwrap();
-            let hex_string = hex::encode(output.tx);
+            println!("output: {:?}", output);
             assert_eq!(
-                hex_string,
-"43f6b2060e2d501e41f6c16e6c4c14c226760e27bb17fc5856072f57fb50132b010000000000000002000000000000000000000000000000000000000000000000000000000000000104636f696e087472616e736665720\
-10700000000000000000000000000000000000000000000000000000000000000010a6170746f735f636f696e094170746f73436f696e000220bc53b90b9283ee484850ff6a47a12e48a6292907212ac50713f112e0a8c3efd208e80\
-300000000000088130000000000006400000000000000fa9d966300000000280020dbad53f90f4c91cdffe471081340da1fd35a54042895789a64644233e9db0b4540ae506f01d858bbac4cfc6ff4478a5cbec96b7787e0af3cb1e20\
-d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
+                output.tx,
+                [
+                    123, 184, 89, 138, 147, 8, 155, 87, 176, 219, 7, 48, 61, 77, 254, 134, 4, 195,
+                    200, 212, 13, 110, 240, 182, 194, 53, 139, 170, 95, 211, 147, 63, 7, 0, 0, 0,
+                    0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 99, 111, 105, 110, 8, 116, 114, 97, 110,
+                    115, 102, 101, 114, 1, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 10, 97, 112, 116, 111, 115, 95, 99,
+                    111, 105, 110, 9, 65, 112, 116, 111, 115, 67, 111, 105, 110, 0, 2, 32, 144, 82,
+                    29, 220, 140, 195, 166, 238, 4, 149, 63, 221, 43, 188, 11, 76, 242, 137, 157,
+                    168, 195, 115, 63, 24, 112, 206, 232, 230, 153, 151, 38, 231, 8, 128, 150, 152,
+                    0, 0, 0, 0, 0, 136, 19, 0, 0, 0, 0, 0, 0, 232, 3, 0, 0, 0, 0, 0, 0, 104, 5,
+                    229, 253, 60, 8, 7, 0, 2, 0, 32, 79, 175, 249, 168, 47, 87, 208, 99, 222, 47,
+                    184, 22, 217, 86, 17, 163, 219, 210, 20, 67, 49, 111, 195, 153, 16, 102, 112,
+                    117, 187, 24, 145, 189, 64, 16, 85, 118, 133, 210, 232, 234, 125, 209, 178, 6,
+                    79, 251, 34, 178, 158, 178, 224, 18, 172, 211, 157, 29, 210, 111, 214, 19, 87,
+                    152, 247, 116, 140, 26, 112, 163, 108, 171, 47, 163, 156, 244, 173, 61, 63,
+                    148, 195, 232, 189, 15, 18, 255, 76, 5, 41, 85, 29, 90, 195, 71, 182, 184, 176,
+                    68, 5
+                ]
+            );
             remove_created_wallet(&wallet.id);
         })
     }

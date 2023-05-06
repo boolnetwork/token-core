@@ -1,4 +1,4 @@
-use crate::address::{DEFAULT_HASH_SIZE, ED25519_FALG, SECP256K1_FALG};
+use crate::address::{DEFAULT_HASH_SIZE, ED25519_FLAG, SECP256K1_FLAG};
 use crate::primitives::SuiUnsignedMessage;
 use crate::transaction::{sui_tx_input::SuiTxType, SuiTxInput, SuiTxOuput};
 use crate::Error;
@@ -28,7 +28,7 @@ impl TransactionSigner<SuiTxInput, SuiTxOuput> for Keystore {
         match sk {
             TypedPrivateKey::Ed25519(_) => {
                 let mut sig = sk.sign_recoverable(&result)?;
-                signature.push(ED25519_FALG);
+                signature.push(ED25519_FLAG);
                 signature.append(&mut sig);
             }
             TypedPrivateKey::Secp256k1(_) => {
@@ -37,7 +37,7 @@ impl TransactionSigner<SuiTxInput, SuiTxOuput> for Keystore {
                 hasher.update(result);
                 result = hasher.finalize().into();
                 let sig = sk.sign_recoverable(&result)?;
-                signature.push(SECP256K1_FALG);
+                signature.push(SECP256K1_FLAG);
                 signature.append(&mut sig[..64].to_vec());
             }
             _ => return Err(failure::Error::from(Error::InvalidSuiCurveType)),

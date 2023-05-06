@@ -4,15 +4,28 @@ package transaction;
 message AptosTxIn {
   bytes sender = 1;
   uint64 sequence_number = 2;
-  string coin_type = 3;
-  bytes to = 4;
-  uint64 amount = 5;
-  uint64 max_gas_amount = 6;
-  uint64 gas_unit_price = 7;
-  uint64 expiration_timestamp_secs = 8;
+  ProtoEntryFunction call_path = 3;
+  repeated bytes args = 4;
+  uint64 max_gas_amount = 5;
+  uint64 gas_unit_price = 6;
+  uint64 expiration_timestamp_secs = 7;
   uint32 chain_id = 9;
 }
 
 message AptosTxOut {
   bytes Tx = 1;
+}
+
+message ProtoEntryFunction {
+  string contract_addr = 1;
+  string module = 2;
+  string function = 3;
+  repeated InstanceType instance = 4;
+}
+
+message InstanceType {
+    string contract_addr = 1;
+    string module = 2;
+    string name = 3;
+    repeated InstanceType type_params = 4;
 }
