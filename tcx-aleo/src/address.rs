@@ -10,7 +10,8 @@ pub struct AleoAddress<N: Network>(PhantomData<N>);
 
 impl<N: Network> AleoAddress<N> {
     fn from_view_key(view_key: AleoViewKey<N>) -> Result<String> {
-        let vk = ViewKey::<N>::from_str(&view_key.1).map_err(|_| Error::InvalidViewKey)?;
+        let vk =
+            ViewKey::<N>::from_str(&view_key.to_string()).map_err(|_| Error::InvalidViewKey)?;
         Ok(vk.to_address().to_string())
     }
 }

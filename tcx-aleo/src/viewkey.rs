@@ -1,19 +1,31 @@
+use crate::privatekey::AleoPrivateKey;
 use crate::Error;
-use snarkvm_console::account::ViewKey;
+use snarkvm_console::account::{ComputeKey, ViewKey};
 use snarkvm_console::network::Network;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
-pub struct AleoViewKey<N: Network>(PhantomData<N>, pub String);
+pub struct AleoViewKey<N: Network>(ViewKey<N>);
 
-impl<N: Network> AleoViewKey<N> {}
+impl<N: Network> AleoViewKey<N> {
+    fn from_private_key(private_key: AleoPrivateKey<N>) -> AleoViewKey<N> {
+        // Derive the compute key.
+        let compute_key = ComputeKey::<N>::try_from(private_key)?;
+    }
+}
 
 impl<N: Network> FromStr for AleoViewKey<N> {
     type Err = failure::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let vk = ViewKey::<N>::from_str(s).map_err(|_| Error::InvalidViewKey)?;
-        Ok(AleoViewKey(PhantomData, vk.to_string()))
+        Ok(AleoViewKey(vk))
+    }
+}
+
+impl<N: Network> ToString for AleoViewKey<N> {
+    fn to_string(&self) -> String {
+        self.0.to_string()
     }
 }
 
