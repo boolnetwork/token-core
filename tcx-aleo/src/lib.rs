@@ -12,6 +12,9 @@ extern crate failure;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum Error {
+    #[fail(display = "invalid_address")]
+    InvalidAddress,
+
     #[fail(display = "invalid_view_key")]
     InvalidViewKey,
 

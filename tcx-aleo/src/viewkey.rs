@@ -1,6 +1,8 @@
+use crate::address::AleoAddress;
+use crate::computekey::AleoComputeKey;
 use crate::privatekey::AleoPrivateKey;
 use crate::Error;
-use snarkvm_console::account::{ComputeKey, ViewKey};
+use snarkvm_console::account::{Address, ComputeKey, ViewKey};
 use snarkvm_console::network::Network;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
@@ -11,12 +13,16 @@ use tcx_constants::Result;
 pub struct AleoViewKey<N: Network>(ViewKey<N>);
 
 impl<N: Network> AleoViewKey<N> {
-    fn from_private_key(private_key: AleoPrivateKey<N>) -> Result<AleoViewKey<N>> {
+    pub fn from_private_key(private_key: &AleoPrivateKey<N>) -> Result<AleoViewKey<N>> {
         // Derive the compute key.
-        let compute_key = private_key.to_compute_key()?;
+        let compute_key = AleoComputeKey::<N>::from_private_key(private_key)?;
         Ok(AleoViewKey(ViewKey::<N>::from_scalar(
             private_key.sk_sig() + private_key.r_sig() + compute_key.sk_prf(),
         )))
+    }
+
+    pub fn to_address(&self) -> AleoAddress<N> {
+        AleoAddress::<N>::new(self.0.to_address())
     }
 }
 
@@ -55,7 +61,7 @@ mod tests {
         let expected = "AViewKey1tya3YUZSMd2LotPBYd9CPyrpQoaSz3BDKiVp8UwjHqPf";
         let sk = "APrivateKey1zkp3Z5SRjW9BomVUqP1Gd9P4vYi6coW1MPfe3HZc7MmMMSk";
         let a_sk = AleoPrivateKey::<CurrentNetwork>::from_str(sk).unwrap();
-        let a_vk_1 = AleoViewKey::<CurrentNetwork>::from_private_key(a_sk).unwrap();
+        let a_vk_1 = AleoViewKey::<CurrentNetwork>::from_private_key(&a_sk).unwrap();
         println!("{}", a_vk_1);
         assert_eq!(a_vk_1.to_string(), expected);
         let a_vk_2 = AleoViewKey::<CurrentNetwork>::from_str(expected).unwrap();

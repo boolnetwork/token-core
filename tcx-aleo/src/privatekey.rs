@@ -18,10 +18,6 @@ impl<N: Network> AleoPrivateKey<N> {
     pub const fn r_sig(&self) -> Scalar<N> {
         self.0.r_sig()
     }
-
-    pub fn to_compute_key(&self) -> Result<AleoComputeKey<N>> {
-        AleoComputeKey::<N>::from_private_key(self)
-    }
 }
 
 impl<N: Network> FromStr for AleoPrivateKey<N> {
