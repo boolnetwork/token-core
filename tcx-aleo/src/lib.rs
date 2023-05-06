@@ -2,6 +2,7 @@ use failure::Fail;
 use snarkvm_console::network::Testnet3;
 
 mod address;
+mod computekey;
 mod privatekey;
 mod viewkey;
 
