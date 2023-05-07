@@ -20,4 +20,9 @@ pub enum Error {
 
     #[fail(display = "invalid_private_key")]
     InvalidPrivateKey,
+
+    #[fail(display = "invalid_compute_key")]
+    InvalidComputeKey,
+    #[fail(display = "custom error: {}", 0)]
+    CustomError(String),
 }

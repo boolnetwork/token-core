@@ -1,6 +1,7 @@
 use crate::computekey::AleoComputeKey;
 use crate::Error;
-use snarkvm_console::account::{ComputeKey, PrivateKey, Scalar};
+use crate::Error::CustomError;
+use snarkvm_console::account::{ComputeKey, CryptoRng, PrivateKey, Rng, Scalar};
 use snarkvm_console::network::Network;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -9,6 +10,11 @@ use tcx_constants::Result;
 pub struct AleoPrivateKey<N: Network>(PrivateKey<N>);
 
 impl<N: Network> AleoPrivateKey<N> {
+    pub fn new<R: Rng + CryptoRng>(rng: &mut R) -> Result<AleoPrivateKey<N>> {
+        let key = PrivateKey::<N>::new(rng).map_err(|e| CustomError(e.to_string()))?;
+        Ok(Self(key))
+    }
+
     /// Returns the signature secret key.
     pub const fn sk_sig(&self) -> Scalar<N> {
         self.0.sk_sig()
