@@ -4,6 +4,7 @@ use snarkvm_console::network::Testnet3;
 mod address;
 mod computekey;
 mod privatekey;
+mod signer;
 mod viewkey;
 
 type CurrentNetwork = Testnet3;
@@ -23,6 +24,7 @@ pub enum Error {
 
     #[fail(display = "invalid_compute_key")]
     InvalidComputeKey,
+
     #[fail(display = "custom error: {}", 0)]
     CustomError(String),
 }

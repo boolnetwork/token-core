@@ -9,7 +9,7 @@ use std::str::FromStr;
 use tcx_constants::Result;
 
 #[derive(Debug, PartialEq)]
-pub struct AleoAddress<N: Network>(Address<N>);
+pub struct AleoAddress<N: Network>(pub Address<N>);
 
 impl<N: Network> AleoAddress<N> {
     pub const fn new(address: Address<N>) -> Self {

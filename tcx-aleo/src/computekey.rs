@@ -6,7 +6,7 @@ use snarkvm_console::network::Network;
 use tcx_constants::Result;
 
 #[derive(Debug, PartialEq)]
-pub struct AleoComputeKey<N: Network>(ComputeKey<N>);
+pub struct AleoComputeKey<N: Network>(pub ComputeKey<N>);
 
 impl<N: Network> AleoComputeKey<N> {
     pub fn from_private_key(private_key: &AleoPrivateKey<N>) -> Result<AleoComputeKey<N>> {
