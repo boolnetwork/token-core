@@ -1,11 +1,10 @@
 use crate::address::AleoAddress;
-use crate::computekey::AleoComputeKey;
 use crate::privatekey::AleoPrivateKey;
 use crate::Error;
-use snarkvm_console::account::{Address, ComputeKey, ViewKey};
+use crate::Error::CustomError;
+use snarkvm_console::account::{ComputeKey, ViewKey};
 use snarkvm_console::network::Network;
 use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
 use std::str::FromStr;
 use tcx_constants::Result;
 
@@ -15,9 +14,10 @@ pub struct AleoViewKey<N: Network>(ViewKey<N>);
 impl<N: Network> AleoViewKey<N> {
     pub fn from_private_key(private_key: &AleoPrivateKey<N>) -> Result<AleoViewKey<N>> {
         // Derive the compute key.
-        let compute_key = AleoComputeKey::<N>::from_private_key(private_key)?;
+        let compute_key =
+            ComputeKey::<N>::try_from(private_key.0).map_err(|e| CustomError(e.to_string()))?;
         Ok(AleoViewKey(ViewKey::<N>::from_scalar(
-            private_key.sk_sig() + private_key.r_sig() + compute_key.sk_prf(),
+            private_key.0.sk_sig() + private_key.0.r_sig() + compute_key.sk_prf(),
         )))
     }
 
@@ -37,7 +37,7 @@ impl<N: Network> FromStr for AleoViewKey<N> {
 
 impl<N: Network> Display for AleoViewKey<N> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        Display::fmt(&self.0, f)
     }
 }
 
