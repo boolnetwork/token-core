@@ -212,12 +212,9 @@ fn tx_prefix_hash() -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::signer::{
-        AccountAddress, RawTransaction, SignedTransaction, TransactionAuthenticator,
-    };
+    use crate::signer::{RawTransaction, SignedTransaction, TransactionAuthenticator};
     use crate::transaction::aptos_tx_in::AptosTxType;
     use crate::{AptosAddress, AptosTxIn, NewTransfer};
-    use sha3::{Digest, Sha3_256};
     use tcx_chain::{Keystore, Metadata, TransactionSigner};
     use tcx_constants::{CoinInfo, CurveType};
 
@@ -228,7 +225,6 @@ mod tests {
                 sender: "0x7bb8598a93089b57b0db07303d4dfe8604c3c8d40d6ef0b6c2358baa5fd3933f"
                     .to_string(),
                 sequence_number: 7,
-                args: vec![],
                 to: "0x90521ddc8cc3a6ee04953fdd2bbc0b4cf2899da8c3733f1870cee8e6999726e7"
                     .to_string(),
                 amount: 10000000u64,

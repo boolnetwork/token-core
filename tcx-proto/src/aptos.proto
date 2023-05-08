@@ -11,13 +11,12 @@ message AptosTxIn {
 message NewTransfer {
     string sender = 1;
     uint64 sequence_number = 2;
-    repeated bytes args = 3;
-    string to = 4;
-    uint64 amount = 5;
-    uint64 max_gas_amount = 6;
-    uint64 gas_unit_price = 7;
-    uint64 expiration_timestamp_secs = 8;
-    uint32 chain_id = 9;
+    string to = 3;
+    uint64 amount = 4;
+    uint64 max_gas_amount = 5;
+    uint64 gas_unit_price = 6;
+    uint64 expiration_timestamp_secs = 7;
+    uint32 chain_id = 8;
 }
 
 message AptosTxOut {
