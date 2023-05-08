@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 use std::str::FromStr;
 use tcx_constants::Result;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(bound = "")]
 pub struct AleoRequest<N: Network> {
     /// program request
@@ -35,7 +35,7 @@ impl<N: Network> AleoRequest<N> {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(bound = "")]
 pub struct AleoProgramRequest<N: Network> {
     pub program_id: String,
@@ -170,7 +170,7 @@ mod tests {
             program_id: "credits.aleo".to_string(),
             function_name: "mint".to_string(),
             inputs: vec![addr.to_string(), "10000u64".to_string()],
-            _phantom: PhantomData,
+            _phantom: PhantomData::<CurrentNetwork>,
         };
 
         let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
@@ -203,5 +203,47 @@ mod tests {
         assert_eq!(req.0.inputs().len(), aleo_program_request.inputs.len());
         assert!(req.1.is_some());
         assert_eq!(req.1.unwrap().inputs().len(), fee_request.inputs.len())
+    }
+
+    #[test]
+    fn test_serde() {
+        let rng = &mut rand::thread_rng();
+        let ask = AleoPrivateKey::<CurrentNetwork>::new(rng).unwrap();
+        let query = "https://vm.aleo.org/api".to_string();
+        let addr = Address::<CurrentNetwork>::try_from(&ask.0).unwrap();
+        let aleo_program_request = AleoProgramRequest {
+            program_id: "credits.aleo".to_string(),
+            function_name: "mint".to_string(),
+            inputs: vec![addr.to_string(), "10000u64".to_string()],
+            _phantom: PhantomData::<CurrentNetwork>,
+        };
+
+        let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+            "{{
+  owner: {}.private,
+  microcredits: 50000000u64.private,
+  _nonce: 6284621587203125875149547889323796299059507753986233073895647656902474803214group.public
+}}",
+            addr.to_string()
+        ))
+        .unwrap();
+
+        let fee_request = AleoProgramRequest {
+            program_id: "credits.aleo".to_string(),
+            function_name: "fee".to_string(),
+
+            inputs: vec![fee_record.to_string(), "1000u64".to_string()],
+            _phantom: Default::default(),
+        };
+
+        let aleo_request = AleoRequest {
+            request: aleo_program_request.clone(),
+            fee: Some(fee_request.clone()),
+            query,
+        };
+
+        let s = serde_json::to_string(&aleo_request).unwrap();
+        let s_r = serde_json::from_str::<AleoRequest<CurrentNetwork>>(&s).unwrap();
+        assert_eq!(aleo_request, s_r)
     }
 }
