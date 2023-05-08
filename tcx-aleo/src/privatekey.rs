@@ -33,7 +33,6 @@ impl<N: Network> FromStr for AleoPrivateKey<N> {
 #[cfg(test)]
 mod tests {
     use crate::privatekey::AleoPrivateKey;
-    use crate::viewkey::AleoViewKey;
     use crate::CurrentNetwork;
     use snarkvm_console::account::{PrivateKey, TestRng};
     use std::str::FromStr;

@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn test_from_str() {
         let mut rng = TestRng::default();
-        for i in 0..ITERATIONS {
+        for _ in 0..ITERATIONS {
             let sk = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
             let vk_s = ViewKey::try_from(&sk).unwrap().to_string();
             let mut vk_s_wrong = vk_s.clone();
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn test_from_private_key() {
         let mut rng = TestRng::default();
-        for i in 0..ITERATIONS {
+        for _ in 0..ITERATIONS {
             let sk_raw = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
             let sk = AleoPrivateKey::<CurrentNetwork>::from_str(&sk_raw.to_string()).unwrap();
             let expected_raw = ViewKey::try_from(sk_raw).unwrap();

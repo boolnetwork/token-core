@@ -10,6 +10,8 @@ mod viewkey;
 
 type CurrentNetwork = Testnet3;
 
+static CURRENT_NETWORK_WORDS: &str = "testnet3";
+
 extern crate failure;
 
 #[derive(Fail, Debug, PartialEq)]

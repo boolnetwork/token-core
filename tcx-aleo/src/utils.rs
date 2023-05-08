@@ -1,4 +1,4 @@
-use crate::Error::{CustomError, InvalidAleoRequest};
+use crate::Error::InvalidAleoRequest;
 use reqwest::Response;
 use tcx_constants::Result;
 

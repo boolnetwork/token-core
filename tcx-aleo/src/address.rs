@@ -35,7 +35,7 @@ mod tests {
     use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
     use crate::CurrentNetwork;
-    use snarkvm_console::account::{Address, PrivateKey, TestRng, ViewKey};
+    use snarkvm_console::account::TestRng;
     use std::str::FromStr;
 
     const ITERATIONS: u64 = 1000;

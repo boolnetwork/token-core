@@ -1,9 +1,9 @@
 use crate::privatekey::AleoPrivateKey;
-use crate::utils;
-use crate::Error::{CustomError, InvalidAleoRequest};
+use crate::Error::InvalidAleoRequest;
+use crate::{utils, CURRENT_NETWORK_WORDS};
 use serde::{Deserialize, Serialize};
 use snarkvm_console::network::Network;
-use snarkvm_console::program::{Identifier, Plaintext, ProgramID, Record, Request, Value};
+use snarkvm_console::program::{Identifier, ProgramID, Request, Value};
 use snarkvm_synthesizer::Program;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -20,6 +20,21 @@ pub struct AleoRequest<N: Network> {
     pub query: String,
 }
 
+impl<N: Network> AleoRequest<N> {
+    pub async fn sign(
+        &self,
+        private_key: &AleoPrivateKey<N>,
+    ) -> Result<(Request<N>, Option<Request<N>>)> {
+        let request = self.request.sign(self.query.clone(), private_key).await?;
+        if let Some(fee) = &self.fee {
+            let fee_request = fee.sign(self.query.clone(), private_key).await?;
+            Ok((request, Some(fee_request)))
+        } else {
+            Ok((request, None))
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(bound = "")]
 pub struct AleoProgramRequest<N: Network> {
@@ -30,7 +45,7 @@ pub struct AleoProgramRequest<N: Network> {
 }
 
 impl<N: Network> AleoProgramRequest<N> {
-    pub async fn sign(&self, query: String, private_key: AleoPrivateKey<N>) -> Result<Request<N>> {
+    async fn sign(&self, query: String, private_key: &AleoPrivateKey<N>) -> Result<Request<N>> {
         let rng = &mut rand::thread_rng();
 
         // get program_id
@@ -42,8 +57,11 @@ impl<N: Network> AleoProgramRequest<N> {
             .map_err(|e| InvalidAleoRequest(e.to_string()))?;
 
         // request node to get program info
-        let response =
-            utils::query_get(format!("{}/testnet3/program/{}", query, self.program_id)).await?;
+        let response = utils::query_get(format!(
+            "{query}/{CURRENT_NETWORK_WORDS}/program/{}",
+            self.program_id
+        ))
+        .await?;
         let text = response
             .text()
             .await
@@ -94,11 +112,11 @@ impl<N: Network> AleoProgramRequest<N> {
 #[cfg(test)]
 mod tests {
     use crate::privatekey::AleoPrivateKey;
-    use crate::request::AleoProgramRequest;
+    use crate::request::{AleoProgramRequest, AleoRequest};
     use crate::Error::CustomError;
     use crate::{utils, CurrentNetwork};
     use snarkvm_console::account::Address;
-    use snarkvm_console::program::Value;
+    use snarkvm_console::program::{Plaintext, Record};
     use snarkvm_synthesizer::Program;
     use std::marker::PhantomData;
     use std::str::FromStr;
@@ -137,7 +155,53 @@ mod tests {
             _phantom: PhantomData,
         };
 
-        let req = aleo_program_request.sign(query, ask).await.unwrap();
-        println!("{}", req)
+        let req = aleo_program_request.sign(query, &ask).await.unwrap();
+        println!("{}", req);
+        assert_eq!(req.inputs().len(), aleo_program_request.inputs.len())
+    }
+
+    #[tokio::test]
+    async fn test_aleo_req_sign() {
+        let rng = &mut rand::thread_rng();
+        let ask = AleoPrivateKey::<CurrentNetwork>::new(rng).unwrap();
+        let query = "https://vm.aleo.org/api".to_string();
+        let addr = Address::<CurrentNetwork>::try_from(&ask.0).unwrap();
+        let aleo_program_request = AleoProgramRequest {
+            program_id: "credits.aleo".to_string(),
+            function_name: "mint".to_string(),
+            inputs: vec![addr.to_string(), "10000u64".to_string()],
+            _phantom: PhantomData,
+        };
+
+        let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+            "{{
+  owner: {}.private,
+  microcredits: 50000000u64.private,
+  _nonce: 6284621587203125875149547889323796299059507753986233073895647656902474803214group.public
+}}",
+            addr.to_string()
+        ))
+        .unwrap();
+
+        let fee_request = AleoProgramRequest {
+            program_id: "credits.aleo".to_string(),
+            function_name: "fee".to_string(),
+
+            inputs: vec![fee_record.to_string(), "1000u64".to_string()],
+            _phantom: Default::default(),
+        };
+
+        let aleo_request = AleoRequest {
+            request: aleo_program_request.clone(),
+            fee: Some(fee_request.clone()),
+            query,
+        };
+
+        let req = aleo_request.sign(&ask).await.unwrap();
+        println!("{}", req.0);
+        println!("{:?}", req.1);
+        assert_eq!(req.0.inputs().len(), aleo_program_request.inputs.len());
+        assert!(req.1.is_some());
+        assert_eq!(req.1.unwrap().inputs().len(), fee_request.inputs.len())
     }
 }
