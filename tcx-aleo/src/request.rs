@@ -21,7 +21,7 @@ pub struct AleoRequest<N: Network> {
 }
 
 impl<N: Network> AleoRequest<N> {
-    pub async fn sign(
+    pub(crate) async fn sign(
         &self,
         private_key: &AleoPrivateKey<N>,
     ) -> Result<(Request<N>, Option<Request<N>>)> {
