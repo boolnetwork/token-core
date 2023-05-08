@@ -3,6 +3,7 @@ use snarkvm_console::network::Testnet3;
 
 mod address;
 mod privatekey;
+mod request;
 mod signer;
 mod viewkey;
 

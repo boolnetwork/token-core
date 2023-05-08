@@ -4945,6 +4945,8 @@ name = "tcx-aleo"
 version = "0.1.0"
 dependencies = [
  "failure",
+ "serde",
+ "serde_json",
  "snarkvm-console",
  "tcx-constants",
 ]

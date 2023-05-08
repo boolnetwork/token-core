@@ -9,3 +9,9 @@ edition = "2021"
 tcx-constants = { path = "../tcx-constants" }
 snarkvm-console = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["account"] }
 failure = "0.1.5"
+
+[dependencies.serde]
+version = "1"
+
+[dependencies.serde_json]
+version = "1"
