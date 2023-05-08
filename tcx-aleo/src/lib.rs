@@ -5,6 +5,7 @@ mod address;
 mod privatekey;
 mod request;
 mod signer;
+mod utils;
 mod viewkey;
 
 type CurrentNetwork = Testnet3;
@@ -24,4 +25,7 @@ pub enum Error {
 
     #[fail(display = "custom error: {}", 0)]
     CustomError(String),
+
+    #[fail(display = "invalid_aleo_request: {}", 0)]
+    InvalidAleoRequest(String),
 }
