@@ -46,25 +46,47 @@ mod tests {
     use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
     use crate::CurrentNetwork;
+    use snarkvm_console::account::{PrivateKey, Rng, TestRng, ViewKey};
     use std::str::FromStr;
+
+    const ITERATIONS: u64 = 1000;
 
     #[test]
     fn test_from_str() {
-        let v_s = "AViewKey1tya3YUZSMd2LotPBYd9CPyrpQoaSz3BDKiVp8UwjHqPf";
-        let v_s_inc = "asdaweatya3YUZSMd2LotPBYd9CPyrpQoaSz3BDKiVp8UwjHqPf";
-        assert!(AleoViewKey::<CurrentNetwork>::from_str(v_s).is_ok());
-        assert!(AleoViewKey::<CurrentNetwork>::from_str(v_s_inc).is_err());
+        let mut rng = TestRng::default();
+        for i in 0..ITERATIONS {
+            let sk = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
+            let vk_s = ViewKey::try_from(&sk).unwrap().to_string();
+            let mut vk_s_wrong = vk_s.clone();
+            if let Some(c) = vk_s_wrong.pop() {
+                loop {
+                    let t: u32 = rng.gen_range(0..10);
+                    if let Ok(new) = char::try_from(t) {
+                        if new != c {
+                            vk_s_wrong.push(new);
+                            break;
+                        }
+                    }
+                }
+            }
+            assert!(AleoViewKey::<CurrentNetwork>::from_str(&vk_s).is_ok());
+            assert!(AleoViewKey::<CurrentNetwork>::from_str(&vk_s_wrong).is_err());
+        }
     }
 
     #[test]
     fn test_from_private_key() {
-        let expected = "AViewKey1tya3YUZSMd2LotPBYd9CPyrpQoaSz3BDKiVp8UwjHqPf";
-        let sk = "APrivateKey1zkp3Z5SRjW9BomVUqP1Gd9P4vYi6coW1MPfe3HZc7MmMMSk";
-        let a_sk = AleoPrivateKey::<CurrentNetwork>::from_str(sk).unwrap();
-        let a_vk_1 = AleoViewKey::<CurrentNetwork>::from_private_key(&a_sk).unwrap();
-        println!("{}", a_vk_1);
-        assert_eq!(a_vk_1.to_string(), expected);
-        let a_vk_2 = AleoViewKey::<CurrentNetwork>::from_str(expected).unwrap();
-        assert_eq!(a_vk_1, a_vk_2);
+        let mut rng = TestRng::default();
+        for i in 0..ITERATIONS {
+            let sk_raw = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
+            let sk = AleoPrivateKey::<CurrentNetwork>::from_str(&sk_raw.to_string()).unwrap();
+            let expected_raw = ViewKey::try_from(sk_raw).unwrap();
+            let expected = expected_raw.to_string();
+
+            let vk = AleoViewKey::from_private_key(&sk).unwrap();
+            assert_eq!(vk.to_string(), expected);
+
+            assert_eq!(vk, AleoViewKey(expected_raw))
+        }
     }
 }

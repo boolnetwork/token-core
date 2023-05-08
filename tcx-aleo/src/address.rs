@@ -39,26 +39,41 @@ impl<N: Network> FromStr for AleoAddress<N> {
 #[cfg(test)]
 mod tests {
     use crate::address::AleoAddress;
+    use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
     use crate::CurrentNetwork;
+    use snarkvm_console::account::{Address, PrivateKey, TestRng, ViewKey};
     use std::str::FromStr;
+
+    const ITERATIONS: u64 = 1000;
 
     #[test]
     fn test_from_str() {
-        let expected = "aleo1nrnwjp5u4lmkf98lymj6rh6u8aa3pnpjg422qhehtvnxre2fvvpq9pxyl2";
-        let address = AleoAddress::<CurrentNetwork>::from_str(expected).unwrap();
-        assert_eq!(address.to_string(), expected)
+        let mut rng = TestRng::default();
+        for _ in 0..ITERATIONS {
+            let private_key = AleoPrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
+            let view_key = AleoViewKey::<CurrentNetwork>::from_private_key(&private_key).unwrap();
+            let expected = view_key.to_address();
+            assert_eq!(
+                expected,
+                AleoAddress::<CurrentNetwork>::from_str(&expected.to_string()).unwrap()
+            )
+        }
     }
 
     #[test]
     fn test_from_view_key() {
-        let v_s = "AViewKey1tya3YUZSMd2LotPBYd9CPyrpQoaSz3BDKiVp8UwjHqPf";
-        let expected = "aleo1nrnwjp5u4lmkf98lymj6rh6u8aa3pnpjg422qhehtvnxre2fvvpq9pxyl2";
-
-        let vk = AleoViewKey::<CurrentNetwork>::from_str(v_s).unwrap();
-        let address_1 = AleoAddress::<CurrentNetwork>::from_view_key(&vk);
-        assert_eq!(address_1.to_string(), expected);
-        let address_2 = AleoAddress::<CurrentNetwork>::from_str(expected).unwrap();
-        assert_eq!(address_1, address_2)
+        let mut rng = TestRng::default();
+        for _ in 0..ITERATIONS {
+            let pk_raw = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
+            let private_key =
+                AleoPrivateKey::<CurrentNetwork>::from_str(&pk_raw.to_string()).unwrap();
+            let view_key = AleoViewKey::<CurrentNetwork>::from_private_key(&private_key).unwrap();
+            let view_key_raw = ViewKey::<CurrentNetwork>::try_from(pk_raw).unwrap();
+            assert_eq!(
+                view_key.to_address().to_string(),
+                view_key_raw.to_address().to_string()
+            )
+        }
     }
 }
