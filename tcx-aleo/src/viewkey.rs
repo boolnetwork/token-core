@@ -168,8 +168,8 @@ mod tests {
         let new_view_key = AleoViewKey::new(view_key1.to_string())
             .map_err(|e| JsValue::from(e))
             .unwrap();
-        console_log!("view_key: {}", view_key1);
-        console_log!("key in view_key: {}", view_key1.key());
+        console_log!("view_key1: {}", view_key1);
+        console_log!("key in view_key1: {}", view_key1.key());
         let (_private_key2, view_key2, _address2) = utils::helpers::generate_account().unwrap();
         console_log!("key in view_key2: {}", view_key2.key());
         view_key1

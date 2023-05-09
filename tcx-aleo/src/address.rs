@@ -70,6 +70,10 @@ mod tests {
     use crate::address::AleoAddress;
     use crate::utils;
     use std::str::FromStr;
+    use wasm_bindgen::JsValue;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
 
     const ITERATIONS: u64 = 1000;
 
@@ -83,5 +87,58 @@ mod tests {
                 AleoAddress::from_str(&expected_address.to_string()).unwrap()
             )
         }
+    }
+
+    #[test]
+    fn test_new_address() {
+        for _ in 0..ITERATIONS {
+            let (_private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
+            let new_address = AleoAddress::new(address.to_string())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+            assert_eq!(address, new_address)
+        }
+    }
+
+    #[test]
+    fn test_get_address() {
+        for _ in 0..ITERATIONS {
+            let (_private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
+            let address_s = address.address();
+            assert_eq!(address.to_string(), address_s)
+        }
+    }
+
+    #[test]
+    fn test_set_address() {
+        for _ in 0..ITERATIONS {
+            let (_private_key1, _view_key1, mut address1) =
+                utils::helpers::generate_account().unwrap();
+            let (_private_key2, _view_key2, address2) = utils::helpers::generate_account().unwrap();
+            address1
+                .set_address(address2.address())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+            assert_eq!(address1.address(), address2.address())
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_address_wasm() {
+        let (_private_key1, _view_key1, mut address1) = utils::helpers::generate_account().unwrap();
+        let new_address = AleoAddress::new(address1.to_string())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        console_log!("address1: {}", address1);
+        console_log!("address in address1: {}", address1.address());
+        let (_private_key2, _view_key2, address2) = utils::helpers::generate_account().unwrap();
+        console_log!("address in address2: {}", address2.address());
+        address1
+            .set_address(address2.address())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        assert_eq!(address1, address2);
+        console_log!("address in address1 after set: {}", address1.address());
     }
 }
