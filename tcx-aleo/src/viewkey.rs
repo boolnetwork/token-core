@@ -6,10 +6,35 @@ use snarkvm_console::account::{ComputeKey, PrivateKey, ViewKey};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsError, JsValue};
 
+#[wasm_bindgen]
 #[derive(Debug, PartialEq)]
 pub struct AleoViewKey(String);
+
+#[wasm_bindgen]
+impl AleoViewKey {
+    #[wasm_bindgen(constructor)]
+    pub fn new(view_key: String) -> std::result::Result<AleoViewKey, JsError> {
+        match Self::from_str(&view_key) {
+            Ok(vk) => Ok(vk),
+            Err(e) => Err(JsError::new(&e.to_string())),
+        }
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn key(&self) -> String {
+        self.0.clone()
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_key(&mut self, view_key: String) -> std::result::Result<(), JsError> {
+        let key = Self::from_str(&view_key).map_err(|e| JsError::new(&e.to_string()))?;
+        self.0 = key.0;
+        Ok(())
+    }
+}
 
 impl AleoViewKey {
     pub(crate) fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoViewKey> {
