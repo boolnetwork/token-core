@@ -74,4 +74,6 @@ mod tests {
             assert_eq!(s, ask.to_string())
         }
     }
+
+    //todo test wasm methods
 }

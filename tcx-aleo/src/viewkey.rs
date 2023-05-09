@@ -34,6 +34,8 @@ impl AleoViewKey {
         self.0 = key.0;
         Ok(())
     }
+
+    //todo decrypt record
 }
 
 impl AleoViewKey {
