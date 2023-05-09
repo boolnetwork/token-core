@@ -12,6 +12,7 @@ mod ed25519_bip32;
 mod rand;
 mod secp256k1;
 mod sr25519;
+mod starknet_curve;
 mod subkey;
 
 use core::result;
@@ -31,6 +32,7 @@ pub use crate::secp256k1::{
     private_key_without_version, verify_private_key, Secp256k1PrivateKey, Secp256k1PublicKey,
 };
 pub use crate::sr25519::{Sr25519PrivateKey, Sr25519PublicKey};
+pub use crate::starknet_curve::{StarknetPrivateKey, StarknetPublicKey};
 
 /// Key that can be encoded to/from SS58.
 pub trait Ss58Codec: Sized {

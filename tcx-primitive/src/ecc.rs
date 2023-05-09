@@ -1,7 +1,7 @@
 use super::Result;
 use crate::{
     Bip32DeterministicPrivateKey, Bip32DeterministicPublicKey, Derive, FromHex,
-    Secp256k1PrivateKey, Secp256k1PublicKey, ToHex,
+    Secp256k1PrivateKey, Secp256k1PublicKey, StarknetPrivateKey, ToHex,
 };
 
 use crate::bls::{BLSPrivateKey, BLSPublicKey};
@@ -10,6 +10,7 @@ use crate::ecc::TypedDeterministicPrivateKey::{Bip32Ed25519, SubSr25519};
 use crate::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
 use crate::ed25519_bip32::{Ed25519DeterministicPrivateKey, Ed25519DeterministicPublicKey};
 use crate::sr25519::{Sr25519PrivateKey, Sr25519PublicKey};
+use crate::starknet_curve::StarknetPublicKey;
 use sp_core::Pair;
 use tcx_constants::CurveType;
 
@@ -106,6 +107,7 @@ pub enum TypedPrivateKey {
     Sr25519(Sr25519PrivateKey),
     Ed25519(Ed25519PrivateKey),
     BLS(BLSPrivateKey),
+    Starknet(StarknetPrivateKey),
 }
 
 impl TypedPrivateKey {
@@ -115,6 +117,7 @@ impl TypedPrivateKey {
             TypedPrivateKey::Sr25519(_) => CurveType::SubSr25519,
             TypedPrivateKey::Ed25519(_) => CurveType::ED25519,
             TypedPrivateKey::BLS(_) => CurveType::BLS,
+            TypedPrivateKey::Starknet(_) => CurveType::StarknetCurve,
         }
     }
 
@@ -130,6 +133,9 @@ impl TypedPrivateKey {
                 data,
             )?)),
             CurveType::BLS => Ok(TypedPrivateKey::BLS(BLSPrivateKey::from_slice(data)?)),
+            CurveType::StarknetCurve => Ok(TypedPrivateKey::Starknet(
+                StarknetPrivateKey::from_slice(data)?,
+            )),
             _ => Err(KeyError::InvalidCurveType.into()),
         }
     }
@@ -147,6 +153,7 @@ impl TypedPrivateKey {
             TypedPrivateKey::Sr25519(sk) => sk.to_bytes(),
             TypedPrivateKey::Ed25519(sk) => sk.to_bytes(),
             TypedPrivateKey::BLS(sk) => sk.to_bytes(),
+            TypedPrivateKey::Starknet(sk) => sk.to_bytes(),
         }
     }
 
@@ -156,6 +163,7 @@ impl TypedPrivateKey {
             TypedPrivateKey::Sr25519(sk) => TypedPublicKey::Sr25519(sk.public_key()),
             TypedPrivateKey::Ed25519(sk) => TypedPublicKey::Ed25519(sk.public_key()),
             TypedPrivateKey::BLS(sk) => TypedPublicKey::BLS(sk.public_key()),
+            TypedPrivateKey::Starknet(sk) => TypedPublicKey::Starknet(sk.public_key()),
         }
     }
 
@@ -165,6 +173,7 @@ impl TypedPrivateKey {
             TypedPrivateKey::Sr25519(sk) => sk.sign(data),
             TypedPrivateKey::Ed25519(sk) => sk.sign(data),
             TypedPrivateKey::BLS(sk) => sk.sign(data),
+            TypedPrivateKey::Starknet(sk) => sk.sign(data),
         }
     }
 
@@ -174,6 +183,7 @@ impl TypedPrivateKey {
             TypedPrivateKey::Sr25519(sk) => sk.sign_recoverable(data),
             TypedPrivateKey::Ed25519(sk) => sk.sign_recoverable(data),
             TypedPrivateKey::BLS(sk) => sk.sign_recoverable(data),
+            TypedPrivateKey::Starknet(sk) => sk.sign(data),
         }
     }
 }
@@ -183,6 +193,7 @@ pub enum TypedPublicKey {
     Sr25519(Sr25519PublicKey),
     Ed25519(Ed25519PublicKey),
     BLS(BLSPublicKey),
+    Starknet(StarknetPublicKey),
 }
 
 impl TypedPublicKey {
@@ -192,6 +203,7 @@ impl TypedPublicKey {
             TypedPublicKey::Sr25519(_) => CurveType::SubSr25519,
             TypedPublicKey::Ed25519(_) => CurveType::ED25519,
             TypedPublicKey::BLS(_) => CurveType::BLS,
+            TypedPublicKey::Starknet(_) => CurveType::StarknetCurve,
         }
     }
 
@@ -205,7 +217,9 @@ impl TypedPublicKey {
             }
             CurveType::ED25519 => Ok(TypedPublicKey::Ed25519(Ed25519PublicKey::from_slice(data)?)),
             CurveType::BLS => Ok(TypedPublicKey::BLS(BLSPublicKey::from_slice(data)?)),
-
+            CurveType::StarknetCurve => Ok(TypedPublicKey::Starknet(
+                StarknetPublicKey::from_slice(data)?,
+            )),
             _ => Err(KeyError::InvalidCurveType.into()),
         }
     }
@@ -216,6 +230,7 @@ impl TypedPublicKey {
             TypedPublicKey::Sr25519(pk) => pk.to_bytes(),
             TypedPublicKey::Ed25519(pk) => pk.to_bytes(),
             TypedPublicKey::BLS(pk) => pk.to_bytes(),
+            TypedPublicKey::Starknet(pk) => pk.to_bytes(),
         }
     }
 

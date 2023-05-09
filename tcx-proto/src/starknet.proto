@@ -1,0 +1,26 @@
+syntax = "proto3";
+package transaction;
+
+message StarknetTxIn {
+  oneof StarknetTxType {
+    string raw_tx = 1;
+    NewTransfer transfer = 2;
+  };
+}
+
+message NewTransfer {
+  string sender = 1;
+  uint64 nonce = 2;
+  string to = 3;
+  string amount = 4;
+  string max_fee = 5;
+  string chain_id = 6;
+}
+
+message StarknetTxOut {
+  string contract_address = 1;
+  repeated string call_data = 2;
+  string signature = 3;
+  string max_fee = 4;
+  string nonce = 5;
+}

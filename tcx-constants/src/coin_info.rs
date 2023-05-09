@@ -411,6 +411,20 @@ lazy_static! {
             network: "TESTNET".to_string(),
             seg_wit: "NONE".to_string(),
         });
+        coin_infos.push(CoinInfo {
+            coin: "STARKNET".to_string(),
+            derivation_path: "m/44'/9004'/0'/0/'/0'".to_string(),
+            curve: CurveType::StarknetCurve,
+            network: "MAINNET".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
+        coin_infos.push(CoinInfo {
+            coin: "STARKNET".to_string(),
+            derivation_path: "m/44'/9004'/0'/0/'/0'".to_string(),
+            curve: CurveType::StarknetCurve,
+            network: "TESTNET".to_string(),
+            seg_wit: "NONE".to_string(),
+        });
         RwLock::new(coin_infos)
     };
 }

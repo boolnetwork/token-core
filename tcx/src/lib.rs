@@ -191,6 +191,7 @@ mod tests {
     use tcx_ethereum::{EthereumTxIn, EthereumTxOut};
     use tcx_filecoin::{SignedMessage, UnsignedMessage};
     use tcx_solana::{SolanaTxIn, SolanaTxOut};
+    use tcx_starknet::{NewTransfer, StarknetTxIn, StarknetTxOut, StarknetTxType};
     use tcx_substrate::{
         ExportSubstrateKeystoreResult, SubstrateKeystore, SubstrateKeystoreParam, SubstrateRawTxIn,
         SubstrateTxOut,
@@ -3261,6 +3262,94 @@ d175a2d08959117a592070b327dbd105589ea1687ff2fd33a52e6588a7b032e54196a252ce202");
             let ret = call_api("sign_tx", tx).unwrap();
             let output: SuiTxOuput = SuiTxOuput::decode(ret.as_slice()).unwrap();
             assert_eq!(output.signature, "AU3Leyt5EKAYVGWhHQQD3gnyrvTiunynu0VU/wky7vYvE1LWI8dnvt0IwRu8dh5UKizUejU89JXoCKI/z/2oRNMC9uKMHAGame2Juz0DN+uBgBbDj/ZGQwU/rPs5ColiDHY=");
+            remove_created_wallet(&wallet.id);
+        })
+    }
+
+    fn import_starknet_pk_store() -> WalletResult {
+        let param: PrivateKeyStoreImportParam = PrivateKeyStoreImportParam {
+            private_key:
+                "1680276612603002181718147419160781730358142667709908871467878829425628458003"
+                    .to_string(),
+            password: TEST_PASSWORD.to_string(),
+            name: "import_starknet_pk_store".to_string(),
+            password_hint: "".to_string(),
+            overwrite: true,
+            encoding: "".to_string(),
+        };
+
+        let ret = private_key_store_import(&encode_message(param).unwrap()).unwrap();
+        WalletResult::decode(ret.as_slice()).unwrap()
+    }
+
+    #[test]
+    pub fn test_starknet_sign_tx() {
+        run_test(|| {
+            let wallet = import_starknet_pk_store();
+            let derivation = Derivation {
+                chain_type: "STARKNET".to_string(),
+                path: "m/44'/9004'/0'/0/'/0'".to_string(),
+                network: "TESTNET".to_string(),
+                seg_wit: "".to_string(),
+                chain_id: "".to_string(),
+                curve: "STARKNET_CURVE".to_string(),
+            };
+            let param = KeystoreCommonDeriveParam {
+                id: wallet.id.to_string(),
+                password: TEST_PASSWORD.to_string(),
+                derivations: vec![derivation],
+            };
+            let ret = call_api("keystore_common_derive", param).unwrap();
+            let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
+            // test transfer
+            let input = StarknetTxIn {
+                starknet_tx_type: Some(StarknetTxType::Transfer(NewTransfer {
+                    sender: "0x0133f10fa30f0b6a98a82d514db2b970db0b43e2bd120a76a17911d58bcd01ff"
+                        .to_string(),
+                    nonce: 10,
+                    to: "0x04c15e9de9b0583417ec528435bee789f71137d98a4826abf0f31588d64fe53d"
+                        .to_string(),
+                    amount: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                        .to_string(),
+                    max_fee: "0x0000000000000000000000000000000000000000000000000000000000000000"
+                        .to_string(),
+                    chain_id: "0x0000000000000000000000000000000000000000000000534e5f474f45524c49"
+                        .to_string(),
+                })),
+            };
+            let tx = SignParam {
+                id: wallet.id.to_string(),
+                key: Some(Key::Password(TEST_PASSWORD.to_string())),
+                chain_type: "STARKNET".to_string(),
+                address: rsp.accounts.first().unwrap().address.to_string(),
+                input: Some(::prost_types::Any {
+                    type_url: "imtoken".to_string(),
+                    value: encode_message(input).unwrap(),
+                }),
+            };
+            let ret = call_api("sign_tx", tx).unwrap();
+            let output: StarknetTxOut = StarknetTxOut::decode(ret.as_slice()).unwrap();
+            assert_eq!(output.signature, "02900d61c17093c18f01a874a1acf4ff1b7d648562cd03aa816efd30d8b96fbd07f73855bafd4996445956f58ae09f72fd17b5ea5107d41f8c8613deb93f355f".to_string());
+
+            // test raw tx
+            let data = "{\"sender\":\"0x0133f10fa30f0b6a98a82d514db2b970db0b43e2bd120a76a17911d58bcd01ff\",\"calls\":[{\"to\":\"0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7\",\"selector\":\"0x0083afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e\",\"call_data\":[\"0x04c15e9de9b0583417ec528435bee789f71137d98a4826abf0f31588d64fe53d\",\"0x0000000000000000000000000000000000000000000000000de0b6b3a7640000\"]}],\"nonce\":10,\"chain_id\":\"0x0000000000000000000000000000000000000000000000534e5f474f45524c49\",\"max_fee\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}".to_string();
+            let input = StarknetTxIn {
+                starknet_tx_type: Some(StarknetTxType::RawTx(data)),
+            };
+            let tx = SignParam {
+                id: wallet.id.to_string(),
+                key: Some(Key::Password(TEST_PASSWORD.to_string())),
+                chain_type: "STARKNET".to_string(),
+                address: rsp.accounts.first().unwrap().address.to_string(),
+                input: Some(::prost_types::Any {
+                    type_url: "imtoken".to_string(),
+                    value: encode_message(input).unwrap(),
+                }),
+            };
+            let ret = call_api("sign_tx", tx).unwrap();
+            let output: StarknetTxOut = StarknetTxOut::decode(ret.as_slice()).unwrap();
+            assert_eq!(output.signature, "02900d61c17093c18f01a874a1acf4ff1b7d648562cd03aa816efd30d8b96fbd07f73855bafd4996445956f58ae09f72fd17b5ea5107d41f8c8613deb93f355f".to_string());
+
             remove_created_wallet(&wallet.id);
         })
     }

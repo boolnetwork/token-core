@@ -20,6 +20,7 @@ use tcx_ckb::{CkbAddress, CkbTxInput};
 use tcx_crypto::{XPUB_COMMON_IV, XPUB_COMMON_KEY_128};
 use tcx_filecoin::{FilecoinAddress, KeyInfo, UnsignedMessage};
 use tcx_solana::{SolanaAddress, SolanaTxIn};
+use tcx_starknet::{StarknetAddress, StarknetTxIn};
 use tcx_sui::{SuiAddress, SuiTxInput};
 use tcx_tron::TrxAddress;
 
@@ -88,6 +89,7 @@ fn derive_account<'a, 'b>(keystore: &mut Keystore, derivation: &Derivation) -> R
         "SOLANA" => keystore.derive_coin::<SolanaAddress>(&coin_info),
         "APTOS" => keystore.derive_coin::<AptosAddress>(&coin_info),
         "SUI" => keystore.derive_coin::<SuiAddress>(&coin_info),
+        "STARKNET" => keystore.derive_coin::<StarknetAddress>(&coin_info),
         _ => Err(format_err!("derive_account unsupported_chain")),
     }
 }
@@ -492,7 +494,7 @@ pub fn export_private_key(data: &[u8]) -> Result<Vec<u8>> {
     // private_key prefix is only about chain type and network
     let _ = coin_info_from_param(&param.chain_type, &param.network, "", "")?;
     let value = if [
-        "TRON", "POLKADOT", "KUSAMA", "ETHEREUM", "SOLANA", "APTOS", "SUI",
+        "TRON", "POLKADOT", "KUSAMA", "ETHEREUM", "SOLANA", "APTOS", "SUI", "STARKNET",
     ]
     .contains(&param.chain_type.as_str())
     {
@@ -663,6 +665,7 @@ pub fn sign_tx(data: &[u8]) -> Result<Vec<u8>> {
         "SOLANA" => sign_solana_tx(&param, guard.keystore_mut()),
         "APTOS" => sign_aptos_tx(&param, guard.keystore_mut()),
         "SUI" => sign_sui_tx(&param, guard.keystore_mut()),
+        "STARKNET" => sign_starknet_tx(&param, guard.keystore_mut()),
         _ => Err(format_err!("sign_tx unsupported_chain")),
     }
 }
@@ -1021,6 +1024,21 @@ pub fn sign_aptos_tx(param: &SignParam, keystore: &mut Keystore) -> Result<Vec<u
 
 pub fn sign_sui_tx(param: &SignParam, keystore: &mut Keystore) -> Result<Vec<u8>> {
     let input: SuiTxInput = SuiTxInput::decode(
+        param
+            .input
+            .as_ref()
+            .expect("raw_tx_input")
+            .value
+            .clone()
+            .as_slice(),
+    )
+    .expect("SuiTxInput");
+    let signed_tx = keystore.sign_transaction(&param.chain_type, &param.address, &input)?;
+    encode_message(signed_tx)
+}
+
+pub fn sign_starknet_tx(param: &SignParam, keystore: &mut Keystore) -> Result<Vec<u8>> {
+    let input: StarknetTxIn = StarknetTxIn::decode(
         param
             .input
             .as_ref()
