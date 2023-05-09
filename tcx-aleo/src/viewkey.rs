@@ -78,9 +78,13 @@ impl Display for AleoViewKey {
 mod tests {
     use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
-    use crate::CurrentNetwork;
+    use crate::{utils, CurrentNetwork};
     use snarkvm_console::account::{PrivateKey, Rng, TestRng, ViewKey};
     use std::str::FromStr;
+    use wasm_bindgen::JsValue;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
 
     const ITERATIONS: u64 = 1000;
 
@@ -109,17 +113,70 @@ mod tests {
 
     #[test]
     fn test_from_private_key() {
-        let mut rng = TestRng::default();
         for _ in 0..ITERATIONS {
-            let sk_raw = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
-            let sk = AleoPrivateKey::from_str(&sk_raw.to_string()).unwrap();
-            let expected_raw = ViewKey::try_from(sk_raw).unwrap();
+            let (private_key, view_key, _address) = utils::helpers::generate_account().unwrap();
+
+            let expected_raw = ViewKey::try_from(private_key.raw().unwrap()).unwrap();
             let expected = expected_raw.to_string();
 
-            let vk = AleoViewKey::from_private_key(&sk).unwrap();
+            let vk = AleoViewKey::from_private_key(&private_key).unwrap();
             assert_eq!(vk.to_string(), expected);
 
-            assert_eq!(vk, AleoViewKey(expected))
+            assert_eq!(vk, AleoViewKey(expected));
+            assert_eq!(vk, view_key)
         }
+    }
+
+    #[test]
+    fn test_new_view_key() {
+        for _ in 0..ITERATIONS {
+            let (_private_key, view_key, _address) = utils::helpers::generate_account().unwrap();
+            let new_view_key = AleoViewKey::new(view_key.to_string())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+            assert_eq!(view_key, new_view_key)
+        }
+    }
+
+    #[test]
+    fn test_get_view_key() {
+        for _ in 0..ITERATIONS {
+            let (_private_key, view_key, _address) = utils::helpers::generate_account().unwrap();
+            let view_key_s = view_key.key();
+            assert_eq!(view_key.to_string(), view_key_s)
+        }
+    }
+
+    #[test]
+    fn test_set_view_key() {
+        for _ in 0..ITERATIONS {
+            let (_private_key1, mut view_key1, _address1) =
+                utils::helpers::generate_account().unwrap();
+            let (_private_key2, view_key2, _address2) = utils::helpers::generate_account().unwrap();
+            view_key1
+                .set_key(view_key2.key())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+            assert_eq!(view_key1.key(), view_key2.key())
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_view_key_wasm() {
+        let (_private_key1, mut view_key1, _address1) = utils::helpers::generate_account().unwrap();
+        let new_view_key = AleoViewKey::new(view_key1.to_string())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        console_log!("view_key: {}", view_key1);
+        console_log!("key in view_key: {}", view_key1.key());
+        let (_private_key2, view_key2, _address2) = utils::helpers::generate_account().unwrap();
+        console_log!("key in view_key2: {}", view_key2.key());
+        view_key1
+            .set_key(view_key2.key())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        assert_eq!(view_key1.key(), view_key2.key());
+        console_log!("key in view_key1 after set: {}", view_key1.key());
     }
 }
