@@ -1,4 +1,5 @@
-use crate::Error::InvalidAddress;
+use crate::privatekey::AleoPrivateKey;
+use crate::Error::{InvalidAddress, InvalidPrivateKey};
 use snarkvm_console::account::Address;
 use snarkvm_console::network::Network;
 use std::fmt::{Debug, Display, Formatter};
@@ -11,6 +12,11 @@ pub struct AleoAddress<N: Network>(pub Address<N>);
 impl<N: Network> AleoAddress<N> {
     pub const fn new(address: Address<N>) -> Self {
         Self(address)
+    }
+
+    pub fn from_private_key(private_key: &AleoPrivateKey<N>) -> Result<AleoAddress<N>> {
+        let address = Address::try_from(private_key.0).map_err(|_| InvalidPrivateKey)?;
+        Ok(Self(address))
     }
 }
 

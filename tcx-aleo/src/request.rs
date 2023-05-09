@@ -45,6 +45,15 @@ pub struct AleoProgramRequest<N: Network> {
 }
 
 impl<N: Network> AleoProgramRequest<N> {
+    pub fn new(program_id: String, function_name: String, inputs: Vec<String>) -> Self {
+        AleoProgramRequest::<N> {
+            program_id,
+            function_name,
+            inputs,
+            _phantom: PhantomData,
+        }
+    }
+
     async fn sign(&self, query: String, private_key: &AleoPrivateKey<N>) -> Result<Request<N>> {
         let rng = &mut rand::thread_rng();
 
