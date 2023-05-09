@@ -105,7 +105,7 @@ pub struct AleoProgramRequest {
 }
 
 impl AleoProgramRequest {
-    pub fn new(program_id: String, function_name: String, inputs: Vec<String>) -> Self {
+    pub(crate) fn new(program_id: String, function_name: String, inputs: Vec<String>) -> Self {
         AleoProgramRequest {
             program_id,
             function_name,

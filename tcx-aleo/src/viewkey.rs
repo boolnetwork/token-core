@@ -12,7 +12,7 @@ use wasm_bindgen::{JsError, JsValue};
 pub struct AleoViewKey(String);
 
 impl AleoViewKey {
-    pub fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoViewKey> {
+    pub(crate) fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoViewKey> {
         let sk = PrivateKey::<CurrentNetwork>::from_str(&private_key.key())
             .map_err(|_| Error::InvalidPrivateKey)?;
         // Derive the compute key.
@@ -24,7 +24,7 @@ impl AleoViewKey {
         ))
     }
 
-    pub fn to_address(&self) -> Result<AleoAddress> {
+    pub(crate) fn to_address(&self) -> Result<AleoAddress> {
         let vk = ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| Error::InvalidViewKey)?;
         let addr = AleoAddress::new(vk.to_address().to_string())
             .map_err(|e| CustomError(JsValue::from(e).as_string().unwrap_or_default()))?;

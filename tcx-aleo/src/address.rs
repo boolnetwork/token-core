@@ -42,7 +42,7 @@ impl AleoAddress {
         Ok(addr)
     }
 
-    pub fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoAddress> {
+    pub(crate) fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoAddress> {
         let vk = AleoViewKey::from_private_key(private_key)?;
         vk.to_address()
     }
