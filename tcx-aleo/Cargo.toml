@@ -31,7 +31,7 @@ serde_json = "1"
 version = "0.8"
 default-features = false
 
-[dev-dependencies.tokio]
+[target."cfg(not(all(any(target_arch = \"wasm32\", target_arch = \"wasm64\"), not(target_os = \"wasi\"))))".dev-dependencies.tokio]
 version = "1.27"
 features = ["macros"]
 
