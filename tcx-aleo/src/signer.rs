@@ -173,6 +173,7 @@ mod tests {
             .await
             .map_err(|e| JsValue::from(e))
             .unwrap();
+        console_log!("res1: {:?}", res);
         let (program_signed_1, no_fee_signed) =
             &serde_wasm_bindgen::from_value::<(String, Option<String>)>(res).unwrap();
 
@@ -203,6 +204,7 @@ mod tests {
             .await
             .map_err(|e| JsValue::from(e))
             .unwrap();
+        console_log!("res2: {:?}", res2);
         let (program_signed_2, fee_signed) =
             &serde_wasm_bindgen::from_value::<(String, Option<String>)>(res2).unwrap();
 

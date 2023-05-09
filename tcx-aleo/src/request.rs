@@ -191,7 +191,7 @@ impl Display for AleoProgramRequest {
     }
 }
 
-#[cfg(all(test, not(target_arch = "wasm32")))]
+#[cfg(test)]
 mod tests {
     use crate::request::{AleoProgramRequest, AleoRequest};
     use crate::Error::CustomError;
@@ -200,6 +200,7 @@ mod tests {
     use snarkvm_synthesizer::Program;
     use std::str::FromStr;
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[tokio::test]
     async fn test_query_program() {
         let response =
@@ -217,6 +218,7 @@ mod tests {
         assert_eq!("OldDuck.aleo", program.id().to_string())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[tokio::test]
     async fn test_sign() {
         let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
@@ -236,6 +238,7 @@ mod tests {
         assert_eq!(req.inputs().len(), aleo_program_request.inputs.len())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[tokio::test]
     async fn test_aleo_req_sign() {
         let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();

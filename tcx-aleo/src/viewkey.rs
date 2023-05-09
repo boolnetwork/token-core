@@ -6,7 +6,7 @@ use snarkvm_console::account::{ComputeKey, PrivateKey, ViewKey};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;
-use wasm_bindgen::JsError;
+use wasm_bindgen::{JsError, JsValue};
 
 #[derive(Debug, PartialEq)]
 pub struct AleoViewKey(String);
@@ -24,11 +24,11 @@ impl AleoViewKey {
         ))
     }
 
-    pub fn to_address(&self) -> std::result::Result<AleoAddress, JsError> {
-        match ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| Error::InvalidViewKey) {
-            Ok(vk) => AleoAddress::new(vk.to_address().to_string()),
-            Err(e) => Err(JsError::new(&e.to_string())),
-        }
+    pub fn to_address(&self) -> Result<AleoAddress> {
+        let vk = ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| Error::InvalidViewKey)?;
+        let addr = AleoAddress::new(vk.to_address().to_string())
+            .map_err(|e| CustomError(JsValue::from(e).as_string().unwrap_or_default()))?;
+        Ok(addr)
     }
 }
 

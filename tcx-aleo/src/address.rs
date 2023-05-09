@@ -23,16 +23,6 @@ impl AleoAddress {
         }
     }
 
-    #[wasm_bindgen(constructor)]
-    pub fn from_private_key(
-        private_key: &AleoPrivateKey,
-    ) -> std::result::Result<AleoAddress, JsError> {
-        match AleoViewKey::from_private_key(private_key) {
-            Ok(vk) => vk.to_address(),
-            Err(e) => Err(JsError::new(&e.to_string())),
-        }
-    }
-
     #[wasm_bindgen(getter)]
     pub fn address(&self) -> String {
         self.0.clone()
@@ -50,6 +40,11 @@ impl AleoAddress {
     pub(crate) fn raw(&self) -> Result<Address<CurrentNetwork>> {
         let addr = Address::<CurrentNetwork>::from_str(&self.0).map_err(|_| InvalidAddress)?;
         Ok(addr)
+    }
+
+    pub fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoAddress> {
+        let vk = AleoViewKey::from_private_key(private_key)?;
+        vk.to_address()
     }
 }
 
