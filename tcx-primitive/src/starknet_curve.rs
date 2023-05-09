@@ -2,7 +2,6 @@ use crate::ecc::{PrivateKey as TraitPrivateKey, PublicKey as TraitPublicKey};
 use crate::Result;
 use starknet_crypto::FieldElement;
 use starknet_signers::SigningKey;
-use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct StarknetPublicKey(pub FieldElement);
@@ -26,7 +25,7 @@ impl TraitPrivateKey for StarknetPrivateKey {
     type PublicKey = StarknetPublicKey;
 
     fn from_slice(data: &[u8]) -> Result<Self> {
-        let sk = FieldElement::from_str(&hex::encode(&data))?;
+        let sk = FieldElement::from_byte_slice_be(data)?;
         Ok(StarknetPrivateKey(SigningKey::from_secret_scalar(sk)))
     }
 

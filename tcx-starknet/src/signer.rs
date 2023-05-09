@@ -172,12 +172,14 @@ mod tests {
 
     #[test]
     fn test_starknet_sign_transfer() {
-        let mut ks = Keystore::from_private_key(
+        // sk from decimal num
+        let sk = FieldElement::from_dec_str(
             "1680276612603002181718147419160781730358142667709908871467878829425628458003",
-            "Password",
-            Metadata::default(),
-            "",
-        );
+        )
+        .unwrap()
+        .to_bytes_be();
+        let mut ks =
+            Keystore::from_private_key(&hex::encode(sk), "Password", Metadata::default(), "");
         ks.unlock_by_password("Password").unwrap();
         let coin_info = CoinInfo {
             coin: "STARKNET".to_string(),
@@ -213,12 +215,13 @@ mod tests {
 
     #[test]
     fn test_starknet_sign_raw() {
-        let mut ks = Keystore::from_private_key(
-            "1680276612603002181718147419160781730358142667709908871467878829425628458003",
-            "Password",
-            Metadata::default(),
-            "",
-        );
+        let sk = FieldElement::from_str(
+            "0x03b700bb76966cf556bcbd41528da8dcfa7086b2b8db7aca3f5cd26df68aac13",
+        )
+        .unwrap()
+        .to_bytes_be();
+        let mut ks =
+            Keystore::from_private_key(&hex::encode(sk), "Password", Metadata::default(), "");
         ks.unlock_by_password("Password").unwrap();
         let coin_info = CoinInfo {
             coin: "STARKNET".to_string(),
