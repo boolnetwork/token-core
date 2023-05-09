@@ -3,7 +3,6 @@ use crate::privatekey::AleoPrivateKey;
 use crate::Error::CustomError;
 use crate::{CurrentNetwork, Error};
 use snarkvm_console::account::{ComputeKey, PrivateKey, ViewKey};
-use snarkvm_console::network::Network;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;

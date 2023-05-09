@@ -1,7 +1,5 @@
-use crate::Error::CustomError;
 use crate::{CurrentNetwork, Error};
-use snarkvm_console::account::{CryptoRng, PrivateKey, Rng};
-use snarkvm_console::network::Network;
+use snarkvm_console::account::PrivateKey;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;

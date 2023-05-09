@@ -1,68 +1,103 @@
 use crate::privatekey::AleoPrivateKey;
 use crate::request::AleoRequest;
 use crate::CurrentNetwork;
-use crate::Error::CustomError;
-use snarkvm_console::account::{CryptoRng, Field, Rng, Signature};
-use snarkvm_console::network::Network;
-use snarkvm_console::program::Request;
+use snarkvm_console::account::{Field, Signature};
 use std::str::FromStr;
-use tcx_constants::Result;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::{JsError, JsValue};
 
+#[wasm_bindgen]
 impl AleoPrivateKey {
     /// Returns a singed program request and a signed fee request if it has
+    #[wasm_bindgen]
     pub async fn sign_request(
         &self,
-        aleo_request: AleoRequest,
-    ) -> Result<(String, Option<String>)> {
-        let (p_signed, f_signed) = aleo_request.sign(self).await?;
+        aleo_request: String,
+    ) -> std::result::Result<JsValue, JsError> {
+        let aleo_request = serde_json::from_str::<AleoRequest>(&aleo_request)
+            .map_err(|e| JsError::new(&e.to_string()))?;
+        let (p_signed, f_signed) = aleo_request
+            .sign(self)
+            .await
+            .map_err(|e| JsError::new(&e.to_string()))?;
         if f_signed.is_some() {
-            Ok((p_signed.to_string(), Some(f_signed.unwrap().to_string())))
+            let value = serde_wasm_bindgen::to_value(&(
+                p_signed.to_string(),
+                Some(f_signed.unwrap().to_string()),
+            ))
+            .map_err(|e| JsError::new(&e.to_string()))?;
+            Ok(value)
         } else {
-            Ok((p_signed.to_string(), None))
+            let value = serde_wasm_bindgen::to_value(&(p_signed.to_string(), None::<String>))
+                .map_err(|e| JsError::new(&e.to_string()))?;
+            Ok(value)
         }
     }
 
     /// Returns a signature for the given message (as field elements) using the private key.
-    pub fn sign(&self, message: &[String]) -> Result<String> {
+    #[wasm_bindgen]
+    pub fn sign(&self, message: String) -> std::result::Result<String, JsError> {
         let rng = &mut rand::thread_rng();
+
+        let message = serde_json::from_str::<Vec<String>>(&message)
+            .map_err(|e| JsError::new(&e.to_string()))?;
 
         let mut msgs = Vec::with_capacity(message.len());
         for msg in message {
-            let f =
-                Field::<CurrentNetwork>::from_str(msg).map_err(|e| CustomError(e.to_string()))?;
+            let f = Field::<CurrentNetwork>::from_str(&msg)
+                .map_err(|e| JsError::new(&e.to_string()))?;
             msgs.push(f)
         }
 
-        let signature = Signature::<CurrentNetwork>::sign(&self.raw()?, msgs.as_slice(), rng)
-            .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
+        let signature = Signature::<CurrentNetwork>::sign(
+            &self.raw().map_err(|e| JsError::new(&e.to_string()))?,
+            msgs.as_slice(),
+            rng,
+        )
+        .map_err(|e| JsError::new(&e.to_string()))?;
         Ok(signature.to_string())
     }
 
     /// Returns a signature for the given message (as bytes) using the private key.
-    pub fn sign_bytes<R: Rng + CryptoRng>(&self, message: &[u8], rng: &mut R) -> Result<String> {
-        let signature = Signature::<CurrentNetwork>::sign_bytes(&self.raw()?, message, rng)
-            .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
+    #[wasm_bindgen]
+    pub fn sign_bytes(&self, message: &[u8]) -> std::result::Result<String, JsError> {
+        let rng = &mut rand::thread_rng();
+        let signature = Signature::<CurrentNetwork>::sign_bytes(
+            &self.raw().map_err(|e| JsError::new(&e.to_string()))?,
+            message,
+            rng,
+        )
+        .map_err(|e| JsError::new(&e.to_string()))?;
         Ok(signature.to_string())
     }
 
     /// Returns a signature for the given message (as bits) using the private key.
-    pub fn sign_bits<R: Rng + CryptoRng>(&self, message: &[bool], rng: &mut R) -> Result<String> {
-        let signature = Signature::<CurrentNetwork>::sign_bits(&self.raw()?, message, rng)
-            .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
+    #[wasm_bindgen]
+    pub fn sign_bits(&self, message: JsValue) -> std::result::Result<String, JsError> {
+        let message: Vec<bool> = serde_wasm_bindgen::from_value(message)?;
+        let rng = &mut rand::thread_rng();
+        let signature = Signature::<CurrentNetwork>::sign_bits(
+            &self.raw().map_err(|e| JsError::new(&e.to_string()))?,
+            message.as_slice(),
+            rng,
+        )
+        .map_err(|e| JsError::new(&e.to_string()))?;
         Ok(signature.to_string())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::address::AleoAddress;
-    use crate::privatekey::AleoPrivateKey;
     use crate::request::{AleoProgramRequest, AleoRequest};
     use crate::{utils, CurrentNetwork};
     use snarkvm_console::account::{Signature, TestRng, Uniform};
     use snarkvm_console::program::{Plaintext, Record, Request};
     use snarkvm_console::types::Field;
     use std::str::FromStr;
+    use wasm_bindgen::JsValue;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
 
     const ITERATIONS: u64 = 100;
 
@@ -81,7 +116,11 @@ mod tests {
                 .into_iter()
                 .map(|msg| msg.to_string())
                 .collect();
-            let signature = private_key.sign(&message).unwrap();
+            let message_s = serde_json::to_string(&message).unwrap();
+            let signature = private_key
+                .sign(message_s)
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
             let message = message
                 .into_iter()
                 .map(|msg| Field::<CurrentNetwork>::from_str(&msg).unwrap())
@@ -97,7 +136,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     async fn test_sign_request() {
         let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
 
@@ -128,11 +168,16 @@ mod tests {
         let aleo_request_no_fee =
             AleoRequest::new(aleo_program_request.to_string(), None, query.clone());
 
+        let res = private_key
+            .sign_request(aleo_request_no_fee.to_string())
+            .await
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
         let (program_signed_1, no_fee_signed) =
-            private_key.sign_request(aleo_request_no_fee).await.unwrap();
-        assert!(no_fee_signed.is_none());
+            &serde_wasm_bindgen::from_value::<(String, Option<String>)>(res).unwrap();
 
-        let program_signed_1 = Request::<CurrentNetwork>::from_str(&program_signed_1).unwrap();
+        assert!(no_fee_signed.is_none());
+        let program_signed_1 = Request::<CurrentNetwork>::from_str(program_signed_1).unwrap();
 
         assert_eq!(
             program_signed_1.program_id().to_string(),
@@ -153,12 +198,19 @@ mod tests {
             query.clone(),
         );
 
+        let res2 = private_key
+            .sign_request(aleo_request_fee.to_string())
+            .await
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
         let (program_signed_2, fee_signed) =
-            private_key.sign_request(aleo_request_fee).await.unwrap();
+            &serde_wasm_bindgen::from_value::<(String, Option<String>)>(res2).unwrap();
+
         assert!(fee_signed.is_some());
 
-        let program_signed_2 = Request::<CurrentNetwork>::from_str(&program_signed_2).unwrap();
-        let fee_signed = Request::<CurrentNetwork>::from_str(&fee_signed.unwrap()).unwrap();
+        let fee_signed = fee_signed.as_ref().unwrap();
+        let program_signed_2 = Request::<CurrentNetwork>::from_str(program_signed_2).unwrap();
+        let fee_signed = Request::<CurrentNetwork>::from_str(fee_signed).unwrap();
 
         assert_eq!(
             program_signed_2.program_id().to_string(),
@@ -190,7 +242,10 @@ mod tests {
             let address_raw = &address.raw().unwrap();
             // Check that the signature is valid for the message.
             let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
-            let signature = private_key.sign_bytes(&message, rng).unwrap();
+            let signature = private_key
+                .sign_bytes(&message)
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
             let signature = Signature::<CurrentNetwork>::from_str(&signature).unwrap();
             assert!(signature.verify_bytes(address_raw, &message));
 
@@ -202,7 +257,8 @@ mod tests {
         }
     }
 
-    #[test]
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     fn test_sign_and_verify_bits() {
         let rng = &mut TestRng::default();
 
@@ -212,7 +268,11 @@ mod tests {
             let address_raw = &address.raw().unwrap();
             // Check that the signature is valid for the message.
             let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
-            let signature = private_key.sign_bits(&message, rng).unwrap();
+            let message_js = serde_wasm_bindgen::to_value(&message).unwrap();
+            let signature = private_key
+                .sign_bits(message_js)
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
             let signature = Signature::<CurrentNetwork>::from_str(&signature).unwrap();
             assert!(signature.verify_bits(address_raw, &message));
 

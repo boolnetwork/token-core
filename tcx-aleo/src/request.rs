@@ -2,11 +2,9 @@ use crate::privatekey::AleoPrivateKey;
 use crate::Error::InvalidAleoRequest;
 use crate::{utils, CurrentNetwork, CURRENT_NETWORK_WORDS};
 use serde::{ser, Deserialize, Serialize};
-use snarkvm_console::network::Network;
 use snarkvm_console::program::{Identifier, ProgramID, Request, Value};
 use snarkvm_synthesizer::Program;
 use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
 use std::str;
 use std::str::FromStr;
 use tcx_constants::Result;
@@ -85,6 +83,16 @@ impl AleoRequest {
         } else {
             Ok((request, None))
         }
+    }
+}
+
+impl Display for AleoRequest {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            serde_json::to_string(self).map_err::<std::fmt::Error, _>(ser::Error::custom)?
+        )
     }
 }
 
@@ -183,16 +191,13 @@ impl Display for AleoProgramRequest {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use crate::privatekey::AleoPrivateKey;
     use crate::request::{AleoProgramRequest, AleoRequest};
     use crate::Error::CustomError;
     use crate::{utils, CurrentNetwork};
-    use snarkvm_console::account::Address;
     use snarkvm_console::program::{Plaintext, Record};
     use snarkvm_synthesizer::Program;
-    use std::marker::PhantomData;
     use std::str::FromStr;
 
     #[tokio::test]

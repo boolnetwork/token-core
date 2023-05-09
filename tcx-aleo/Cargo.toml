@@ -5,27 +5,38 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
 [dependencies]
 tcx-constants = { path = "../tcx-constants" }
-snarkvm-console = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["account"] }
-snarkvm-synthesizer = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core" }
+snarkvm-console = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["wasm"] }
+snarkvm-synthesizer = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["wasm"] }
 failure = "0.1.5"
-reqwest = "0.11.17"
+reqwest = "0.11"
 wasm-bindgen = {version =  "0.2"}
 serde-wasm-bindgen = "0.5.0"
-#js-sys = "0.3.61"
+wasm-bindgen-futures = "0.4"
+getrandom = { version = "0.2", features = ["js"] }
+console_error_panic_hook = { version = "0.1.6", optional = true }
+wee_alloc = { version = "0.4", optional = true }
+serde = "1"
+serde_json = "1"
 
-[dependencies.serde]
-version = "1"
-features = ["derive"]
-
-[dependencies.serde_json]
-version = "1"
 
 [dependencies.rand]
 version = "0.8"
 default-features = false
 
 [dev-dependencies.tokio]
-version = "1.28.0"
+version = "1.27"
 features = ["macros"]
+
+[dev-dependencies.wasm-bindgen-test]
+version = "0.3"
+
+[profile.release]
+opt-level = "s"

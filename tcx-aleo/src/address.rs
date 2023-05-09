@@ -1,17 +1,13 @@
 use crate::privatekey::AleoPrivateKey;
 use crate::viewkey::AleoViewKey;
 use crate::CurrentNetwork;
-use crate::Error::{InvalidAddress, InvalidPrivateKey};
+use crate::Error::InvalidAddress;
 use serde::{Deserialize, Serialize};
 use snarkvm_console::account::Address;
-use snarkvm_console::network::Network;
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;
-use wasm_bindgen::convert::ReturnWasmAbi;
-use wasm_bindgen::describe::WasmDescribe;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsValue;
 
 #[wasm_bindgen]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -52,7 +48,7 @@ impl AleoAddress {
 
 impl AleoAddress {
     pub(crate) fn raw(&self) -> Result<Address<CurrentNetwork>> {
-        let addr = Address::<CurrentNetwork>::from_str(&self.0).map_err(|e| InvalidAddress)?;
+        let addr = Address::<CurrentNetwork>::from_str(&self.0).map_err(|_| InvalidAddress)?;
         Ok(addr)
     }
 }
@@ -77,18 +73,13 @@ impl FromStr for AleoAddress {
 #[cfg(test)]
 mod tests {
     use crate::address::AleoAddress;
-    use crate::privatekey::AleoPrivateKey;
-    use crate::viewkey::AleoViewKey;
-    use crate::{utils, CurrentNetwork};
-    use snarkvm_console::account::TestRng;
+    use crate::utils;
     use std::str::FromStr;
-    use wasm_bindgen::prelude::wasm_bindgen;
 
     const ITERATIONS: u64 = 1000;
 
     #[test]
     fn test_from_str() {
-        let mut rng = TestRng::default();
         for _ in 0..ITERATIONS {
             let (_private_key, _view_key, expected_address) =
                 utils::helpers::generate_account().unwrap();
