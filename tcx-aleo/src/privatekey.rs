@@ -1,31 +1,58 @@
-use crate::Error;
 use crate::Error::CustomError;
+use crate::{CurrentNetwork, Error};
 use snarkvm_console::account::{CryptoRng, PrivateKey, Rng};
 use snarkvm_console::network::Network;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsError;
 
-pub struct AleoPrivateKey<N: Network>(pub PrivateKey<N>);
+#[wasm_bindgen]
+pub struct AleoPrivateKey(String);
 
-impl<N: Network> AleoPrivateKey<N> {
-    pub fn new<R: Rng + CryptoRng>(rng: &mut R) -> Result<AleoPrivateKey<N>> {
-        let key = PrivateKey::<N>::new(rng).map_err(|e| CustomError(e.to_string()))?;
-        Ok(Self(key))
+#[wasm_bindgen]
+impl AleoPrivateKey {
+    #[wasm_bindgen(constructor)]
+    pub fn new(key: String) -> std::result::Result<AleoPrivateKey, JsError> {
+        let key = Self::from_str(&key).map_err(|e| JsError::new(&e.to_string()))?;
+        Ok(key)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn key(&self) -> String {
+        self.0.clone()
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_key(&mut self, key: String) -> std::result::Result<(), JsError> {
+        let key = Self::from_str(&key).map_err(|e| JsError::new(&e.to_string()))?;
+        self.0 = key.0;
+        Ok(())
     }
 }
 
-impl<N: Network> Display for AleoPrivateKey<N> {
+impl AleoPrivateKey {
+    pub(crate) fn raw(&self) -> Result<PrivateKey<CurrentNetwork>> {
+        let sk = PrivateKey::<CurrentNetwork>::from_str(&self.0)
+            .map_err(|_| Error::InvalidPrivateKey)?;
+        Ok(sk)
+    }
+}
+
+impl Display for AleoPrivateKey {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.0, f)
     }
 }
 
-impl<N: Network> FromStr for AleoPrivateKey<N> {
+impl FromStr for AleoPrivateKey {
     type Err = failure::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let key = PrivateKey::<N>::from_str(s).map_err(|_| Error::InvalidPrivateKey)?;
+        let key = PrivateKey::<CurrentNetwork>::from_str(s)
+            .map_err(|_| Error::InvalidPrivateKey)?
+            .to_string();
         Ok(AleoPrivateKey(key))
     }
 }
@@ -38,13 +65,14 @@ mod tests {
     use std::str::FromStr;
 
     const ITERATIONS: u64 = 1000;
+
     #[test]
     fn test_display() {
         let mut rng = TestRng::default();
         for _ in 0..ITERATIONS {
             let private_key = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
             let s = private_key.to_string();
-            let ask = AleoPrivateKey::<CurrentNetwork>::from_str(&s).unwrap();
+            let ask = AleoPrivateKey::from_str(&s).unwrap();
             assert_eq!(s, ask.to_string())
         }
     }

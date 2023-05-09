@@ -1,48 +1,53 @@
 use crate::privatekey::AleoPrivateKey;
 use crate::request::AleoRequest;
+use crate::CurrentNetwork;
 use crate::Error::CustomError;
 use snarkvm_console::account::{CryptoRng, Field, Rng, Signature};
 use snarkvm_console::network::Network;
 use snarkvm_console::program::Request;
+use std::str::FromStr;
 use tcx_constants::Result;
 
-impl<N: Network> AleoPrivateKey<N> {
+impl AleoPrivateKey {
     /// Returns a singed program request and a signed fee request if it has
     pub async fn sign_request(
         &self,
-        aleo_request: AleoRequest<N>,
-    ) -> Result<(Request<N>, Option<Request<N>>)> {
-        aleo_request.sign(self).await
+        aleo_request: AleoRequest,
+    ) -> Result<(String, Option<String>)> {
+        let (p_signed, f_signed) = aleo_request.sign(self).await?;
+        if f_signed.is_some() {
+            Ok((p_signed.to_string(), Some(f_signed.to_string())))
+        } else {
+            Ok((p_signed.to_string(), None))
+        }
     }
 
     /// Returns a signature for the given message (as field elements) using the private key.
-    pub fn sign<R: Rng + CryptoRng>(
-        &self,
-        message: &[Field<N>],
-        rng: &mut R,
-    ) -> Result<Signature<N>> {
-        Signature::sign(&self.0, message, rng)
-            .map_err(|e| failure::Error::from(CustomError(e.to_string())))
+    pub fn sign(&self, message: &[String]) -> Result<String> {
+        let rng = &mut rand::thread_rng();
+
+        let msgs = message
+            .into_iter()
+            .map(|s| Field::<CurrentNetwork>::from_str(s).map_err(|e| CustomError(e.to_string())))
+            .collect::<Vec<Field<CurrentNetwork>>>();
+
+        let signature = Signature::<CurrentNetwork>::sign(&self.raw()?, msgs.as_slice(), rng)
+            .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
+        Ok(signature.to_string())
     }
 
     /// Returns a signature for the given message (as bytes) using the private key.
-    pub fn sign_bytes<R: Rng + CryptoRng>(
-        &self,
-        message: &[u8],
-        rng: &mut R,
-    ) -> Result<Signature<N>> {
-        Signature::sign_bytes(&self.0, message, rng)
-            .map_err(|e| failure::Error::from(CustomError(e.to_string())))
+    pub fn sign_bytes<R: Rng + CryptoRng>(&self, message: &[u8], rng: &mut R) -> Result<String> {
+        let signature = Signature::<CurrentNetwork>::sign_bytes(&self.raw()?, message, rng)
+            .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
+        Ok(signature.to_string())
     }
 
     /// Returns a signature for the given message (as bits) using the private key.
-    pub fn sign_bits<R: Rng + CryptoRng>(
-        &self,
-        message: &[bool],
-        rng: &mut R,
-    ) -> Result<Signature<N>> {
-        Signature::sign_bits(&self.0, message, rng)
-            .map_err(|e| failure::Error::from(CustomError(e.to_string())))
+    pub fn sign_bits<R: Rng + CryptoRng>(&self, message: &[bool], rng: &mut R) -> Result<String> {
+        let signature = Signature::<CurrentNetwork>::sign_bits(&self.raw()?, message, rng)
+            .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
+        Ok(signature.to_string())
     }
 }
 
@@ -52,7 +57,7 @@ mod tests {
     use crate::privatekey::AleoPrivateKey;
     use crate::request::{AleoProgramRequest, AleoRequest};
     use crate::{utils, CurrentNetwork};
-    use snarkvm_console::account::{TestRng, Uniform};
+    use snarkvm_console::account::{Signature, TestRng, Uniform};
     use snarkvm_console::program::{Plaintext, Record};
     use std::str::FromStr;
 
@@ -65,31 +70,31 @@ mod tests {
         for i in 0..ITERATIONS {
             // Sample an address and a private key.
             let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
-
+            let address_raw = &address.raw().unwrap();
             // Check that the signature is valid for the message.
             let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
-            let signature = private_key.sign(&message, rng).unwrap();
-            assert!(signature.verify(&address.0, &message));
+            let signature = private_key.sign(&message).unwrap();
+            let signature = Signature::<CurrentNetwork>::from_str(&signature).unwrap();
+            assert!(signature.verify(address_raw, &message.try_into()));
 
             // Check that the signature is invalid for an incorrect message.
             let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
             if message != failure_message {
-                assert!(!signature.verify(&address.0, &failure_message));
+                assert!(!signature.verify(address_raw, &failure_message));
             }
         }
     }
 
     #[tokio::test]
     async fn test_sign_request() {
-        let rng = &mut rand::thread_rng();
-        let ask = AleoPrivateKey::<CurrentNetwork>::new(rng).unwrap();
-        let query = "https://vm.aleo.org/api".to_string();
-        let addr = AleoAddress::<CurrentNetwork>::from_private_key(&ask).unwrap();
+        let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
 
-        let aleo_program_request = AleoProgramRequest::<CurrentNetwork>::new(
+        let query = "https://vm.aleo.org/api".to_string();
+
+        let aleo_program_request = AleoProgramRequest::new(
             "credits.aleo".to_string(),
             "mint".to_string(),
-            vec![addr.to_string(), "10000u64".to_string()],
+            vec![address.address(), "10000u64".to_string()],
         );
 
         let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
@@ -98,24 +103,21 @@ mod tests {
   microcredits: 50000000u64.private,
   _nonce: 6284621587203125875149547889323796299059507753986233073895647656902474803214group.public
 }}",
-            addr.to_string()
+            address.address()
         ))
         .unwrap();
 
-        let fee_request = AleoProgramRequest::<CurrentNetwork>::new(
+        let fee_request = AleoProgramRequest::new(
             "credits.aleo".to_string(),
             "fee".to_string(),
             vec![fee_record.to_string(), "1000u64".to_string()],
         );
 
-        let aleo_request_no_fee = AleoRequest {
-            request: aleo_program_request.clone(),
-            fee: None,
-            query: query.clone(),
-        };
+        let aleo_request_no_fee =
+            AleoRequest::new(aleo_program_request.clone(), None, query.clone());
 
         let (program_signed_1, no_fee_signed) =
-            ask.sign_request(aleo_request_no_fee).await.unwrap();
+            private_key.sign_request(aleo_request_no_fee).await.unwrap();
         assert!(no_fee_signed.is_none());
         assert_eq!(
             program_signed_1.program_id().to_string(),
@@ -130,12 +132,14 @@ mod tests {
             aleo_program_request.function_name
         );
 
-        let aleo_request_fee = AleoRequest {
-            request: aleo_program_request.clone(),
-            fee: Some(fee_request.clone()),
-            query,
-        };
-        let (program_signed_2, fee_signed) = ask.sign_request(aleo_request_fee).await.unwrap();
+        let aleo_request_fee = AleoRequest::new(
+            aleo_program_request.clone(),
+            Some(fee_request.clone()),
+            query.clone(),
+        );
+
+        let (program_signed_2, fee_signed) =
+            private_key.sign_request(aleo_request_fee).await.unwrap();
         assert!(fee_signed.is_some());
         assert_eq!(
             program_signed_2.program_id().to_string(),
@@ -165,16 +169,17 @@ mod tests {
         for i in 0..ITERATIONS {
             // Sample an address and a private key.
             let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
-
+            let address_raw = &address.raw().unwrap();
             // Check that the signature is valid for the message.
             let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
             let signature = private_key.sign_bytes(&message, rng).unwrap();
-            assert!(signature.verify_bytes(&address.0, &message));
+            let signature = Signature::<CurrentNetwork>::from_str(&signature).unwrap();
+            assert!(signature.verify_bytes(address_raw, &message));
 
             // Check that the signature is invalid for an incorrect message.
             let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
             if message != failure_message {
-                assert!(!signature.verify_bytes(&address.0, &failure_message));
+                assert!(!signature.verify_bytes(address_raw, &failure_message));
             }
         }
     }
@@ -186,16 +191,17 @@ mod tests {
         for i in 0..ITERATIONS {
             // Sample an address and a private key.
             let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
-
+            let address_raw = &address.raw().unwrap();
             // Check that the signature is valid for the message.
             let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
             let signature = private_key.sign_bits(&message, rng).unwrap();
-            assert!(signature.verify_bits(&address.0, &message));
+            let signature = Signature::<CurrentNetwork>::from_str(&signature).unwrap();
+            assert!(signature.verify_bits(address_raw, &message));
 
             // Check that the signature is invalid for an incorrect message.
             let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
             if message != failure_message {
-                assert!(!signature.verify_bits(&address.0, &failure_message));
+                assert!(!signature.verify_bits(address_raw, &failure_message));
             }
         }
     }

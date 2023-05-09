@@ -8,12 +8,15 @@ edition = "2021"
 [dependencies]
 tcx-constants = { path = "../tcx-constants" }
 snarkvm-console = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["account"] }
-snarkvm-synthesizer = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core"}
+snarkvm-synthesizer = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core" }
 failure = "0.1.5"
 reqwest = "0.11.17"
+wasm-bindgen = {version =  "0.2"}
+serde-wasm-bindgen = "0.5.0"
 
 [dependencies.serde]
 version = "1"
+features = ["derive"]
 
 [dependencies.serde_json]
 version = "1"

@@ -1,5 +1,9 @@
 use failure::Fail;
 use snarkvm_console::network::Testnet3;
+use wasm_bindgen::convert::ReturnWasmAbi;
+use wasm_bindgen::describe::WasmDescribe;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsValue;
 
 mod address;
 mod privatekey;

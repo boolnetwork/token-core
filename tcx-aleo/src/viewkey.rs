@@ -1,41 +1,50 @@
 use crate::address::AleoAddress;
 use crate::privatekey::AleoPrivateKey;
-use crate::Error;
 use crate::Error::CustomError;
-use snarkvm_console::account::{ComputeKey, ViewKey};
+use crate::{CurrentNetwork, Error};
+use snarkvm_console::account::{ComputeKey, PrivateKey, ViewKey};
 use snarkvm_console::network::Network;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;
+use wasm_bindgen::JsError;
 
 #[derive(Debug, PartialEq)]
-pub struct AleoViewKey<N: Network>(ViewKey<N>);
+pub struct AleoViewKey(String);
 
-impl<N: Network> AleoViewKey<N> {
-    pub fn from_private_key(private_key: &AleoPrivateKey<N>) -> Result<AleoViewKey<N>> {
+impl AleoViewKey {
+    pub fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoViewKey> {
+        let sk = PrivateKey::<CurrentNetwork>::from_str(&private_key.key())
+            .map_err(|_| Error::InvalidPrivateKey)?;
         // Derive the compute key.
         let compute_key =
-            ComputeKey::<N>::try_from(private_key.0).map_err(|e| CustomError(e.to_string()))?;
-        Ok(AleoViewKey(ViewKey::<N>::from_scalar(
-            private_key.0.sk_sig() + private_key.0.r_sig() + compute_key.sk_prf(),
-        )))
+            ComputeKey::<CurrentNetwork>::try_from(sk).map_err(|e| CustomError(e.to_string()))?;
+        Ok(AleoViewKey(
+            ViewKey::<CurrentNetwork>::from_scalar(sk.sk_sig() + sk.r_sig() + compute_key.sk_prf())
+                .to_string(),
+        ))
     }
 
-    pub fn to_address(&self) -> AleoAddress<N> {
-        AleoAddress::<N>::new(self.0.to_address())
+    pub fn to_address(&self) -> std::result::Result<AleoAddress, JsError> {
+        match ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| Error::InvalidViewKey) {
+            Ok(vk) => AleoAddress::new(vk.to_address().to_string()),
+            Err(e) => JsError::new(&e.to_string()),
+        }
     }
 }
 
-impl<N: Network> FromStr for AleoViewKey<N> {
+impl FromStr for AleoViewKey {
     type Err = failure::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let vk = ViewKey::<N>::from_str(s).map_err(|_| Error::InvalidViewKey)?;
+        let vk = ViewKey::from_str(s)
+            .map_err(|_| Error::InvalidViewKey)?
+            .to_string();
         Ok(AleoViewKey(vk))
     }
 }
 
-impl<N: Network> Display for AleoViewKey<N> {
+impl Display for AleoViewKey {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.0, f)
     }
@@ -69,8 +78,8 @@ mod tests {
                     }
                 }
             }
-            assert!(AleoViewKey::<CurrentNetwork>::from_str(&vk_s).is_ok());
-            assert!(AleoViewKey::<CurrentNetwork>::from_str(&vk_s_wrong).is_err());
+            assert!(AleoViewKey::from_str(&vk_s).is_ok());
+            assert!(AleoViewKey::from_str(&vk_s_wrong).is_err());
         }
     }
 
@@ -79,14 +88,14 @@ mod tests {
         let mut rng = TestRng::default();
         for _ in 0..ITERATIONS {
             let sk_raw = PrivateKey::<CurrentNetwork>::new(&mut rng).unwrap();
-            let sk = AleoPrivateKey::<CurrentNetwork>::from_str(&sk_raw.to_string()).unwrap();
+            let sk = AleoPrivateKey::from_str(&sk_raw.to_string()).unwrap();
             let expected_raw = ViewKey::try_from(sk_raw).unwrap();
             let expected = expected_raw.to_string();
 
             let vk = AleoViewKey::from_private_key(&sk).unwrap();
             assert_eq!(vk.to_string(), expected);
 
-            assert_eq!(vk, AleoViewKey(expected_raw))
+            assert_eq!(vk, AleoViewKey(expected))
         }
     }
 }

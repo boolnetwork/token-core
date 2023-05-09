@@ -13,26 +13,25 @@ pub(crate) async fn query_get(query_url: String) -> Result<Response> {
 
 #[cfg(test)]
 pub(crate) mod helpers {
-    use snarkvm_console::account::TestRng;
+    use snarkvm_console::account::{PrivateKey, TestRng};
 
     use crate::address::AleoAddress;
     use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
     use crate::CurrentNetwork;
+    use crate::Error::CustomError;
     use tcx_constants::Result;
 
     #[allow(clippy::type_complexity)]
-    pub(crate) fn generate_account() -> Result<(
-        AleoPrivateKey<CurrentNetwork>,
-        AleoViewKey<CurrentNetwork>,
-        AleoAddress<CurrentNetwork>,
-    )> {
+    pub(crate) fn generate_account() -> Result<(AleoPrivateKey, AleoViewKey, AleoAddress)> {
         // Sample a random private key.
-        let private_key = AleoPrivateKey::<CurrentNetwork>::new(&mut TestRng::default())?;
+        let sk = PrivateKey::<CurrentNetwork>::new(&mut TestRng::default())
+            .map_err(|e| CustomError(e.to_string()))?;
+        let private_key = AleoPrivateKey::new(sk.to_string())?;
 
         // Derive the compute key, view key, and address.
-        let view_key = AleoViewKey::<CurrentNetwork>::from_private_key(&private_key)?;
-        let address = AleoAddress::<CurrentNetwork>::from_private_key(&private_key)?;
+        let view_key = AleoViewKey::from_private_key(&private_key)?;
+        let address = AleoAddress::from_private_key(&private_key)?;
 
         // Return the private key and compute key components.
         Ok((private_key, view_key, address))
