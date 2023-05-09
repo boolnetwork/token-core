@@ -33,7 +33,7 @@ impl AleoAddress {
     ) -> std::result::Result<AleoAddress, JsError> {
         match AleoViewKey::from_private_key(private_key) {
             Ok(vk) => vk.to_address(),
-            Err(_) => {}
+            Err(e) => Err(JsError::new(&e.to_string())),
         }
     }
 
@@ -90,7 +90,8 @@ mod tests {
     fn test_from_str() {
         let mut rng = TestRng::default();
         for _ in 0..ITERATIONS {
-            let (_private_key, _view_key, expected_address) = utils::helpers::generate_account()?;
+            let (_private_key, _view_key, expected_address) =
+                utils::helpers::generate_account().unwrap();
             assert_eq!(
                 expected_address,
                 AleoAddress::from_str(&expected_address.to_string()).unwrap()

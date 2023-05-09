@@ -1,11 +1,13 @@
 use crate::privatekey::AleoPrivateKey;
 use crate::Error::InvalidAleoRequest;
 use crate::{utils, CurrentNetwork, CURRENT_NETWORK_WORDS};
-use serde::{Deserialize, Serialize};
+use serde::{ser, Deserialize, Serialize};
 use snarkvm_console::network::Network;
 use snarkvm_console::program::{Identifier, ProgramID, Request, Value};
 use snarkvm_synthesizer::Program;
+use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
+use std::str;
 use std::str::FromStr;
 use tcx_constants::Result;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -15,9 +17,9 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[serde(bound = "")]
 pub struct AleoRequest {
     /// program request
-    request: AleoProgramRequest,
+    request: String,
     /// fee request, record and fee_in_microcredits
-    fee: Option<AleoProgramRequest>,
+    fee: Option<String>,
     /// The endpoint to query node state from
     query: String,
 }
@@ -25,11 +27,7 @@ pub struct AleoRequest {
 #[wasm_bindgen]
 impl AleoRequest {
     #[wasm_bindgen(constructor)]
-    pub fn new(
-        request: AleoProgramRequest,
-        fee: Option<AleoProgramRequest>,
-        query: String,
-    ) -> AleoRequest {
+    pub fn new(request: String, fee: Option<String>, query: String) -> AleoRequest {
         AleoRequest {
             request,
             fee,
@@ -38,22 +36,22 @@ impl AleoRequest {
     }
 
     #[wasm_bindgen(getter)]
-    pub fn request(&self) -> AleoProgramRequest {
+    pub fn request(&self) -> String {
         self.request.clone()
     }
 
     #[wasm_bindgen(setter)]
-    pub fn set_request(&mut self, request: AleoProgramRequest) {
+    pub fn set_request(&mut self, request: String) {
         self.request = request
     }
 
     #[wasm_bindgen(getter)]
-    pub fn fee(&self) -> Option<AleoProgramRequest> {
+    pub fn fee(&self) -> Option<String> {
         self.fee.clone()
     }
 
     #[wasm_bindgen(setter)]
-    pub fn set_fee(&mut self, fee: Option<AleoProgramRequest>) {
+    pub fn set_fee(&mut self, fee: Option<String>) {
         self.fee = fee
     }
 
@@ -73,8 +71,15 @@ impl AleoRequest {
         &self,
         private_key: &AleoPrivateKey,
     ) -> Result<(Request<CurrentNetwork>, Option<Request<CurrentNetwork>>)> {
-        let request = self.request.sign(self.query.clone(), private_key).await?;
+        let program_request = serde_json::from_str::<AleoProgramRequest>(&self.request)
+            .map_err(|e| InvalidAleoRequest(e.to_string()))?;
+
+        let request = program_request
+            .sign(self.query.clone(), private_key)
+            .await?;
         if let Some(fee) = &self.fee {
+            let fee = serde_json::from_str::<AleoProgramRequest>(&fee)
+                .map_err(|e| InvalidAleoRequest(e.to_string()))?;
             let fee_request = fee.sign(self.query.clone(), private_key).await?;
             Ok((request, Some(fee_request)))
         } else {
@@ -156,7 +161,7 @@ impl AleoProgramRequest {
         }
 
         let request = Request::sign(
-            &private_key.raw(),
+            &private_key.raw()?,
             program_id,
             function_name,
             inputs.iter(),
@@ -165,6 +170,16 @@ impl AleoProgramRequest {
         )
         .map_err(|e| InvalidAleoRequest(e.to_string()))?;
         Ok(request)
+    }
+}
+
+impl Display for AleoProgramRequest {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            serde_json::to_string(self).map_err::<std::fmt::Error, _>(ser::Error::custom)?
+        )
     }
 }
 
@@ -199,7 +214,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sign() {
-        let (private_key, _view_key, address) = utils::helpers::generate_account()?;
+        let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
 
         let query = "https://vm.aleo.org/api".to_string();
         let aleo_program_request = AleoProgramRequest {
@@ -218,7 +233,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_aleo_req_sign() {
-        let (private_key, _view_key, address) = utils::helpers::generate_account()?;
+        let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
 
         let query = "https://vm.aleo.org/api".to_string();
         let aleo_program_request = AleoProgramRequest {
@@ -245,8 +260,8 @@ mod tests {
         };
 
         let aleo_request = AleoRequest {
-            request: aleo_program_request.clone(),
-            fee: Some(fee_request.clone()),
+            request: aleo_program_request.to_string(),
+            fee: Some(fee_request.to_string()),
             query,
         };
 
@@ -260,7 +275,7 @@ mod tests {
 
     #[test]
     fn test_serde() {
-        let (_private_key, _view_key, address) = utils::helpers::generate_account()?;
+        let (_private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
         let query = "https://vm.aleo.org/api".to_string();
         let aleo_program_request = AleoProgramRequest {
             program_id: "credits.aleo".to_string(),
@@ -286,8 +301,8 @@ mod tests {
         };
 
         let aleo_request = AleoRequest {
-            request: aleo_program_request.clone(),
-            fee: Some(fee_request.clone()),
+            request: aleo_program_request.to_string(),
+            fee: Some(fee_request.to_string()),
             query,
         };
 

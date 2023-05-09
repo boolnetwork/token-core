@@ -19,7 +19,7 @@ pub(crate) mod helpers {
     use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
     use crate::CurrentNetwork;
-    use crate::Error::CustomError;
+    use crate::Error::{CustomError, InvalidPrivateKey};
     use tcx_constants::Result;
 
     #[allow(clippy::type_complexity)]
@@ -27,11 +27,11 @@ pub(crate) mod helpers {
         // Sample a random private key.
         let sk = PrivateKey::<CurrentNetwork>::new(&mut TestRng::default())
             .map_err(|e| CustomError(e.to_string()))?;
-        let private_key = AleoPrivateKey::new(sk.to_string())?;
+        let private_key = AleoPrivateKey::new(sk.to_string()).map_err(|_| InvalidPrivateKey)?;
 
         // Derive the compute key, view key, and address.
         let view_key = AleoViewKey::from_private_key(&private_key)?;
-        let address = AleoAddress::from_private_key(&private_key)?;
+        let address = AleoAddress::from_private_key(&private_key).map_err(|_| InvalidPrivateKey)?;
 
         // Return the private key and compute key components.
         Ok((private_key, view_key, address))

@@ -28,7 +28,7 @@ impl AleoViewKey {
     pub fn to_address(&self) -> std::result::Result<AleoAddress, JsError> {
         match ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| Error::InvalidViewKey) {
             Ok(vk) => AleoAddress::new(vk.to_address().to_string()),
-            Err(e) => JsError::new(&e.to_string()),
+            Err(e) => Err(JsError::new(&e.to_string())),
         }
     }
 }
@@ -37,7 +37,7 @@ impl FromStr for AleoViewKey {
     type Err = failure::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let vk = ViewKey::from_str(s)
+        let vk = ViewKey::<CurrentNetwork>::from_str(s)
             .map_err(|_| Error::InvalidViewKey)?
             .to_string();
         Ok(AleoViewKey(vk))

@@ -16,7 +16,7 @@ impl AleoPrivateKey {
     ) -> Result<(String, Option<String>)> {
         let (p_signed, f_signed) = aleo_request.sign(self).await?;
         if f_signed.is_some() {
-            Ok((p_signed.to_string(), Some(f_signed.to_string())))
+            Ok((p_signed.to_string(), Some(f_signed.unwrap().to_string())))
         } else {
             Ok((p_signed.to_string(), None))
         }
@@ -26,10 +26,12 @@ impl AleoPrivateKey {
     pub fn sign(&self, message: &[String]) -> Result<String> {
         let rng = &mut rand::thread_rng();
 
-        let msgs = message
-            .into_iter()
-            .map(|s| Field::<CurrentNetwork>::from_str(s).map_err(|e| CustomError(e.to_string())))
-            .collect::<Vec<Field<CurrentNetwork>>>();
+        let mut msgs = Vec::with_capacity(message.len());
+        for msg in message {
+            let f =
+                Field::<CurrentNetwork>::from_str(msg).map_err(|e| CustomError(e.to_string()))?;
+            msgs.push(f)
+        }
 
         let signature = Signature::<CurrentNetwork>::sign(&self.raw()?, msgs.as_slice(), rng)
             .map_err(|e| failure::Error::from(CustomError(e.to_string())))?;
@@ -58,7 +60,8 @@ mod tests {
     use crate::request::{AleoProgramRequest, AleoRequest};
     use crate::{utils, CurrentNetwork};
     use snarkvm_console::account::{Signature, TestRng, Uniform};
-    use snarkvm_console::program::{Plaintext, Record};
+    use snarkvm_console::program::{Plaintext, Record, Request};
+    use snarkvm_console::types::Field;
     use std::str::FromStr;
 
     const ITERATIONS: u64 = 100;
@@ -72,10 +75,19 @@ mod tests {
             let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
             let address_raw = &address.raw().unwrap();
             // Check that the signature is valid for the message.
-            let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            let message: Vec<_> = (0..i)
+                .map(|_| Uniform::rand(rng))
+                .collect::<Vec<Field<CurrentNetwork>>>()
+                .into_iter()
+                .map(|msg| msg.to_string())
+                .collect();
             let signature = private_key.sign(&message).unwrap();
+            let message = message
+                .into_iter()
+                .map(|msg| Field::<CurrentNetwork>::from_str(&msg).unwrap())
+                .collect::<Vec<Field<CurrentNetwork>>>();
             let signature = Signature::<CurrentNetwork>::from_str(&signature).unwrap();
-            assert!(signature.verify(address_raw, &message.try_into()));
+            assert!(signature.verify(address_raw, message.as_slice()));
 
             // Check that the signature is invalid for an incorrect message.
             let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
@@ -114,11 +126,14 @@ mod tests {
         );
 
         let aleo_request_no_fee =
-            AleoRequest::new(aleo_program_request.clone(), None, query.clone());
+            AleoRequest::new(aleo_program_request.to_string(), None, query.clone());
 
         let (program_signed_1, no_fee_signed) =
             private_key.sign_request(aleo_request_no_fee).await.unwrap();
         assert!(no_fee_signed.is_none());
+
+        let program_signed_1 = Request::<CurrentNetwork>::from_str(&program_signed_1).unwrap();
+
         assert_eq!(
             program_signed_1.program_id().to_string(),
             aleo_program_request.program_id
@@ -133,14 +148,18 @@ mod tests {
         );
 
         let aleo_request_fee = AleoRequest::new(
-            aleo_program_request.clone(),
-            Some(fee_request.clone()),
+            aleo_program_request.to_string(),
+            Some(fee_request.to_string()),
             query.clone(),
         );
 
         let (program_signed_2, fee_signed) =
             private_key.sign_request(aleo_request_fee).await.unwrap();
         assert!(fee_signed.is_some());
+
+        let program_signed_2 = Request::<CurrentNetwork>::from_str(&program_signed_2).unwrap();
+        let fee_signed = Request::<CurrentNetwork>::from_str(&fee_signed.unwrap()).unwrap();
+
         assert_eq!(
             program_signed_2.program_id().to_string(),
             aleo_program_request.program_id
@@ -153,7 +172,6 @@ mod tests {
             program_signed_2.function_name().to_string(),
             aleo_program_request.function_name
         );
-        let fee_signed = fee_signed.unwrap();
         assert_eq!(fee_signed.program_id().to_string(), fee_request.program_id);
         assert_eq!(fee_signed.inputs().len(), fee_request.inputs.len());
         assert_eq!(
