@@ -51,9 +51,33 @@ mod tests {
     use crate::address::AleoAddress;
     use crate::privatekey::AleoPrivateKey;
     use crate::request::{AleoProgramRequest, AleoRequest};
-    use crate::CurrentNetwork;
+    use crate::{utils, CurrentNetwork};
+    use snarkvm_console::account::{TestRng, Uniform};
     use snarkvm_console::program::{Plaintext, Record};
     use std::str::FromStr;
+
+    const ITERATIONS: u64 = 100;
+
+    #[test]
+    fn test_sign_and_verify() {
+        let rng = &mut TestRng::default();
+
+        for i in 0..ITERATIONS {
+            // Sample an address and a private key.
+            let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
+
+            // Check that the signature is valid for the message.
+            let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            let signature = private_key.sign(&message, rng).unwrap();
+            assert!(signature.verify(&address.0, &message));
+
+            // Check that the signature is invalid for an incorrect message.
+            let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            if message != failure_message {
+                assert!(!signature.verify(&address.0, &failure_message));
+            }
+        }
+    }
 
     #[tokio::test]
     async fn test_sign_request() {
@@ -132,5 +156,47 @@ mod tests {
             fee_signed.function_name().to_string(),
             fee_request.function_name
         );
+    }
+
+    #[test]
+    fn test_sign_and_verify_bytes() {
+        let rng = &mut TestRng::default();
+
+        for i in 0..ITERATIONS {
+            // Sample an address and a private key.
+            let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
+
+            // Check that the signature is valid for the message.
+            let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            let signature = private_key.sign_bytes(&message, rng).unwrap();
+            assert!(signature.verify_bytes(&address.0, &message));
+
+            // Check that the signature is invalid for an incorrect message.
+            let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            if message != failure_message {
+                assert!(!signature.verify_bytes(&address.0, &failure_message));
+            }
+        }
+    }
+
+    #[test]
+    fn test_sign_and_verify_bits() {
+        let rng = &mut TestRng::default();
+
+        for i in 0..ITERATIONS {
+            // Sample an address and a private key.
+            let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
+
+            // Check that the signature is valid for the message.
+            let message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            let signature = private_key.sign_bits(&message, rng).unwrap();
+            assert!(signature.verify_bits(&address.0, &message));
+
+            // Check that the signature is invalid for an incorrect message.
+            let failure_message: Vec<_> = (0..i).map(|_| Uniform::rand(rng)).collect();
+            if message != failure_message {
+                assert!(!signature.verify_bits(&address.0, &failure_message));
+            }
+        }
     }
 }
