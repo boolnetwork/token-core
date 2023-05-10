@@ -275,7 +275,7 @@ mod tests {
         assert_eq!(transfer.fee_record(), Some(fee_record_new.to_string()));
     }
 
-    #[cfg(target_arch = "wasm32")]
+    // #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen_test]
     async fn test_to_aleo_request() {
         let (private_key_owner, _view_key_owner, address_owner) =
@@ -324,7 +324,6 @@ mod tests {
             "test_to_aleo_request should correct: {:?}",
             signed_correct.map_err(|e| JsValue::from(e))
         );
-        let signed_correct = private_key_owner.sign_request(request.to_string()).await;
         let signed_incorrect = private_key_recipient
             .sign_request(request.to_string())
             .await;

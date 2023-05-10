@@ -34,6 +34,14 @@ impl AleoAddress {
         self.0 = addr.0;
         Ok(())
     }
+
+    pub fn from_private_key(private_key: String) -> std::result::Result<String, JsError> {
+        let sk =
+            AleoPrivateKey::from_str(&private_key).map_err(|e| JsError::new(&e.to_string()))?;
+        let address =
+            Self::from_private_key_internal(&sk).map_err(|e| JsError::new(&e.to_string()))?;
+        Ok(address.to_string())
+    }
 }
 
 impl AleoAddress {
@@ -42,8 +50,8 @@ impl AleoAddress {
         Ok(addr)
     }
 
-    pub(crate) fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoAddress> {
-        let vk = AleoViewKey::from_private_key(private_key)?;
+    pub(crate) fn from_private_key_internal(private_key: &AleoPrivateKey) -> Result<AleoAddress> {
+        let vk = AleoViewKey::from_private_key_internal(private_key)?;
         vk.to_address()
     }
 }
@@ -137,5 +145,17 @@ mod tests {
             .unwrap();
         assert_eq!(address1, address2);
         console_log!("address in address1 after set: {}", address1.address());
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_from_private_key() {
+        let (private_key, _view_key, address_expected) =
+            utils::helpers::generate_account().unwrap();
+        let address = AleoAddress::from_private_key(private_key.key())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        assert_eq!(address_expected.address(), address);
+        console_log!("test address from_private_key: {}", address)
     }
 }

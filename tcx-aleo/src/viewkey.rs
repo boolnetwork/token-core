@@ -37,7 +37,6 @@ impl AleoViewKey {
         Ok(())
     }
 
-    #[wasm_bindgen]
     pub fn decrypt_record(&self, ciphertext: String) -> std::result::Result<String, JsError> {
         let ciphertext_record =
             Record::<CurrentNetwork, Ciphertext<CurrentNetwork>>::from_str(&ciphertext)
@@ -48,10 +47,17 @@ impl AleoViewKey {
             .map_err(|e| JsError::new(&e.to_string()))?;
         Ok(record.to_string())
     }
+
+    pub fn from_private_key(private_key: String) -> std::result::Result<String, JsError> {
+        let sk =
+            AleoPrivateKey::from_str(&private_key).map_err(|e| JsError::new(&e.to_string()))?;
+        let vk = Self::from_private_key_internal(&sk).map_err(|e| JsError::new(&e.to_string()))?;
+        Ok(vk.to_string())
+    }
 }
 
 impl AleoViewKey {
-    pub(crate) fn from_private_key(private_key: &AleoPrivateKey) -> Result<AleoViewKey> {
+    pub(crate) fn from_private_key_internal(private_key: &AleoPrivateKey) -> Result<AleoViewKey> {
         let sk = PrivateKey::<CurrentNetwork>::from_str(&private_key.key())
             .map_err(|_| Error::InvalidPrivateKey)?;
         // Derive the compute key.
@@ -136,14 +142,14 @@ mod tests {
     }
 
     #[test]
-    fn test_from_private_key() {
+    fn test_from_private_key_internal() {
         for _ in 0..ITERATIONS {
             let (private_key, view_key, _address) = utils::helpers::generate_account().unwrap();
 
             let expected_raw = ViewKey::try_from(private_key.raw().unwrap()).unwrap();
             let expected = expected_raw.to_string();
 
-            let vk = AleoViewKey::from_private_key(&private_key).unwrap();
+            let vk = AleoViewKey::from_private_key_internal(&private_key).unwrap();
             assert_eq!(vk.to_string(), expected);
 
             assert_eq!(vk, AleoViewKey(expected));
@@ -281,5 +287,17 @@ mod tests {
         assert_eq!(record, ciphertext.decrypt(&view_key).unwrap());
 
         ciphertext
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_from_private_key() {
+        let (private_key, view_key_expected, _address) =
+            utils::helpers::generate_account().unwrap();
+        let view_key = AleoViewKey::from_private_key(private_key.key())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        assert_eq!(view_key_expected.key(), view_key);
+        console_log!("test view_key from_private_key: {}", view_key)
     }
 }

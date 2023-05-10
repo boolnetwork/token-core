@@ -30,8 +30,9 @@ pub(crate) mod helpers {
         let private_key = AleoPrivateKey::new(sk.to_string()).map_err(|_| InvalidPrivateKey)?;
 
         // Derive the compute key, view key, and address.
-        let view_key = AleoViewKey::from_private_key(&private_key)?;
-        let address = AleoAddress::from_private_key(&private_key).map_err(|_| InvalidPrivateKey)?;
+        let view_key = AleoViewKey::from_private_key_internal(&private_key)?;
+        let address =
+            AleoAddress::from_private_key_internal(&private_key).map_err(|_| InvalidPrivateKey)?;
 
         // Return the private key and compute key components.
         Ok((private_key, view_key, address))
