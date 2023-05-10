@@ -1,8 +1,9 @@
 use crate::address::AleoAddress;
 use crate::privatekey::AleoPrivateKey;
-use crate::Error::CustomError;
+use crate::Error::{CustomError, InvalidViewKey};
 use crate::{CurrentNetwork, Error};
 use snarkvm_console::account::{ComputeKey, PrivateKey, ViewKey};
+use snarkvm_console::program::{Ciphertext, Record};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tcx_constants::Result;
@@ -35,7 +36,17 @@ impl AleoViewKey {
         Ok(())
     }
 
-    //todo decrypt record
+    #[wasm_bindgen]
+    pub fn decrypt_record(&self, ciphertext: String) -> std::result::Result<String, JsError> {
+        let ciphertext_record =
+            Record::<CurrentNetwork, Ciphertext<CurrentNetwork>>::from_str(&ciphertext)
+                .map_err(|e| JsError::new(&e.to_string()))?;
+        let view_key_raw = self.raw().map_err(|e| JsError::new(&e.to_string()))?;
+        let record = ciphertext_record
+            .decrypt(&view_key_raw)
+            .map_err(|e| JsError::new(&e.to_string()))?;
+        Ok(record.to_string())
+    }
 }
 
 impl AleoViewKey {
@@ -52,10 +63,15 @@ impl AleoViewKey {
     }
 
     pub(crate) fn to_address(&self) -> Result<AleoAddress> {
-        let vk = ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| Error::InvalidViewKey)?;
+        let vk = ViewKey::<CurrentNetwork>::from_str(&self.0).map_err(|_| InvalidViewKey)?;
         let addr = AleoAddress::new(vk.to_address().to_string())
             .map_err(|e| CustomError(JsValue::from(e).as_string().unwrap_or_default()))?;
         Ok(addr)
+    }
+
+    fn raw(&self) -> Result<ViewKey<CurrentNetwork>> {
+        let view_key = ViewKey::from_str(&self.key()).map_err(|_e| InvalidViewKey)?;
+        Ok(view_key)
     }
 }
 
@@ -64,7 +80,7 @@ impl FromStr for AleoViewKey {
 
     fn from_str(s: &str) -> Result<Self> {
         let vk = ViewKey::<CurrentNetwork>::from_str(s)
-            .map_err(|_| Error::InvalidViewKey)?
+            .map_err(|_| InvalidViewKey)?
             .to_string();
         Ok(AleoViewKey(vk))
     }
@@ -81,7 +97,12 @@ mod tests {
     use crate::privatekey::AleoPrivateKey;
     use crate::viewkey::AleoViewKey;
     use crate::{utils, CurrentNetwork};
-    use snarkvm_console::account::{PrivateKey, Rng, TestRng, ViewKey};
+    use indexmap::IndexMap;
+    use snarkvm_console::account::{Field, PrivateKey, Rng, Scalar, TestRng, Uniform, ViewKey};
+    use snarkvm_console::network::Network;
+    use snarkvm_console::program::{
+        Ciphertext, Entry, Identifier, Literal, Owner, Plaintext, Record,
+    };
     use std::str::FromStr;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::*;
@@ -167,9 +188,6 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_view_key_wasm() {
         let (_private_key1, mut view_key1, _address1) = utils::helpers::generate_account().unwrap();
-        let new_view_key = AleoViewKey::new(view_key1.to_string())
-            .map_err(|e| JsValue::from(e))
-            .unwrap();
         console_log!("view_key1: {}", view_key1);
         console_log!("key in view_key1: {}", view_key1.key());
         let (_private_key2, view_key2, _address2) = utils::helpers::generate_account().unwrap();
@@ -180,5 +198,87 @@ mod tests {
             .unwrap();
         assert_eq!(view_key1.key(), view_key2.key());
         console_log!("key in view_key1 after set: {}", view_key1.key());
+    }
+
+    #[test]
+    fn test_decrypt_record() {
+        let mut rng = TestRng::default();
+
+        for _ in 0..ITERATIONS {
+            let (_private_key, view_key, address) = utils::helpers::generate_account().unwrap();
+            let owner = Owner::Private(Plaintext::from(Literal::Address(address.raw().unwrap())));
+            let ciphertext_record = construct_ciphertext(view_key.raw().unwrap(), owner, &mut rng);
+
+            let plaintext = ciphertext_record
+                .decrypt(&view_key.raw().unwrap())
+                .unwrap()
+                .to_string();
+
+            // Decrypt the ciphertext.
+            let expected_plaintext = view_key
+                .decrypt_record(ciphertext_record.to_string())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+
+            assert_eq!(plaintext, expected_plaintext)
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_decrypt_record_wasm() {
+        let mut rng = TestRng::default();
+
+        let (_private_key, view_key, address) = utils::helpers::generate_account().unwrap();
+        let owner = Owner::Private(Plaintext::from(Literal::Address(address.raw().unwrap())));
+        let ciphertext_record = construct_ciphertext(view_key.raw().unwrap(), owner, &mut rng);
+
+        let plaintext = ciphertext_record
+            .decrypt(&view_key.raw().unwrap())
+            .unwrap()
+            .to_string();
+
+        // Decrypt the ciphertext.
+        let expected_plaintext = view_key
+            .decrypt_record(ciphertext_record.to_string())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+
+        assert_eq!(plaintext, expected_plaintext);
+
+        console_log!("expected_plaintext: {}", expected_plaintext)
+    }
+
+    fn construct_ciphertext(
+        view_key: ViewKey<CurrentNetwork>,
+        owner: Owner<CurrentNetwork, Plaintext<CurrentNetwork>>,
+        rng: &mut TestRng,
+    ) -> Record<CurrentNetwork, Ciphertext<CurrentNetwork>> {
+        // Prepare the record.
+        let randomizer = Scalar::rand(rng);
+        let record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_plaintext(
+            owner,
+            IndexMap::from_iter(
+                vec![
+                    (
+                        Identifier::from_str("a").unwrap(),
+                        Entry::Private(Plaintext::from(Literal::Field(Field::rand(rng)))),
+                    ),
+                    (
+                        Identifier::from_str("b").unwrap(),
+                        Entry::Private(Plaintext::from(Literal::Scalar(Scalar::rand(rng)))),
+                    ),
+                ]
+                .into_iter(),
+            ),
+            CurrentNetwork::g_scalar_multiply(&randomizer),
+        )
+        .unwrap();
+        // Encrypt the record.
+        let ciphertext = record.encrypt(randomizer).unwrap();
+        // Decrypt the record.
+        assert_eq!(record, ciphertext.decrypt(&view_key).unwrap());
+
+        ciphertext
     }
 }

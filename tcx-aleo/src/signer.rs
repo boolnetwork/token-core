@@ -20,12 +20,10 @@ impl AleoPrivateKey {
             .sign(self)
             .await
             .map_err(|e| JsError::new(&e.to_string()))?;
-        if f_signed.is_some() {
-            let value = serde_wasm_bindgen::to_value(&(
-                p_signed.to_string(),
-                Some(f_signed.unwrap().to_string()),
-            ))
-            .map_err(|e| JsError::new(&e.to_string()))?;
+        if let Some(f_signed) = f_signed {
+            let value =
+                serde_wasm_bindgen::to_value(&(p_signed.to_string(), Some(f_signed.to_string())))
+                    .map_err(|e| JsError::new(&e.to_string()))?;
             Ok(value)
         } else {
             let value = serde_wasm_bindgen::to_value(&(p_signed.to_string(), None::<String>))

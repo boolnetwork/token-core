@@ -127,9 +127,6 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_address_wasm() {
         let (_private_key1, _view_key1, mut address1) = utils::helpers::generate_account().unwrap();
-        let new_address = AleoAddress::new(address1.to_string())
-            .map_err(|e| JsValue::from(e))
-            .unwrap();
         console_log!("address1: {}", address1);
         console_log!("address in address1: {}", address1.address());
         let (_private_key2, _view_key2, address2) = utils::helpers::generate_account().unwrap();
