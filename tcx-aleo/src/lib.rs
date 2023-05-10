@@ -5,6 +5,7 @@ mod address;
 mod privatekey;
 mod request;
 mod signer;
+mod transfer;
 mod utils;
 mod viewkey;
 
@@ -35,4 +36,7 @@ pub enum Error {
 
     #[fail(display = "invalid_aleo_request: {}", 0)]
     InvalidAleoRequest(String),
+
+    #[fail(display = "fee_record_missed")]
+    FeeRecordMissed,
 }
