@@ -3,8 +3,10 @@ use crate::Error::{FeeRecordMissed, InvalidAleoRequest};
 use crate::{AleoRequest, CurrentNetwork};
 use snarkvm_console::program::{Plaintext, Record, Value, U64};
 use std::str::FromStr;
+use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsError;
 
+#[wasm_bindgen]
 pub struct AleoTransfer {
     /// The input record used to craft the transfer.
     input_record: String,
@@ -17,7 +19,9 @@ pub struct AleoTransfer {
     fee_record: Option<String>,
 }
 
+#[wasm_bindgen]
 impl AleoTransfer {
+    #[wasm_bindgen(constructor)]
     pub fn new(
         input_record: String,
         recipient: String,
@@ -34,24 +38,54 @@ impl AleoTransfer {
         }
     }
 
+    #[wasm_bindgen(getter)]
     pub fn input_record(&self) -> String {
         self.input_record.clone()
     }
 
+    #[wasm_bindgen(getter)]
     pub fn recipient(&self) -> String {
         self.recipient.clone()
     }
 
+    #[wasm_bindgen(getter)]
     pub fn amount(&self) -> u64 {
         self.amount
     }
 
+    #[wasm_bindgen(getter)]
     pub fn fee(&self) -> Option<u64> {
         self.fee
     }
 
+    #[wasm_bindgen(getter)]
     pub fn fee_record(&self) -> Option<String> {
         self.fee_record.clone()
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_input_record(&mut self, input_record: String) {
+        self.input_record = input_record
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_recipient(&mut self, recipient: String) {
+        self.recipient = recipient
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_amount(&mut self, amount: u64) {
+        self.amount = amount
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_fee(&mut self, fee: Option<u64>) {
+        self.fee = fee
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_fee_record(&mut self, fee_record: Option<String>) {
+        self.fee_record = fee_record
     }
 
     pub fn to_aleo_request(&self, query: String) -> std::result::Result<AleoRequest, JsError> {
