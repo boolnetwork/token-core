@@ -275,7 +275,7 @@ mod tests {
         assert_eq!(transfer.fee_record(), Some(fee_record_new.to_string()));
     }
 
-    // #[cfg(target_arch = "wasm32")]
+    #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen_test]
     async fn test_to_aleo_request() {
         let (private_key_owner, _view_key_owner, address_owner) =
