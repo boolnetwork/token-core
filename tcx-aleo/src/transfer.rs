@@ -7,6 +7,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsError;
 
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct AleoTransfer {
     /// The input record used to craft the transfer.
     input_record: String,
@@ -93,9 +94,13 @@ impl AleoTransfer {
             Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&self.input_record)
                 .map_err(|e| JsError::new(&e.to_string()))?;
         let program_inputs = vec![
-            Value::Record(program_inputs_record).to_string(),
-            Value::from_str(&format!("{}", self.recipient))?.to_string(),
-            Value::from_str(&format!("{}u64", self.amount))?.to_string(),
+            Value::<CurrentNetwork>::Record(program_inputs_record).to_string(),
+            Value::<CurrentNetwork>::from_str(&format!("{}", self.recipient))
+                .map_err(|e| JsError::new(&e.to_string()))?
+                .to_string(),
+            Value::<CurrentNetwork>::from_str(&format!("{}u64", self.amount))
+                .map_err(|e| JsError::new(&e.to_string()))?
+                .to_string(),
         ];
         let program_req = AleoProgramRequest::new(
             "credits.aleo".to_string(),
@@ -110,9 +115,15 @@ impl AleoTransfer {
                 let fee_record =
                     Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&fee_record)
                         .map_err(|e| JsError::new(&e.to_string()))?;
+
                 let fee_inputs = vec![
-                    Value::Record(fee_record).to_string(),
-                    Value::from_str(&format!("{}", U64::<CurrentNetwork>::new(fee))).to_string(),
+                    Value::<CurrentNetwork>::Record(fee_record).to_string(),
+                    Value::<CurrentNetwork>::from_str(&format!(
+                        "{}",
+                        U64::<CurrentNetwork>::new(fee)
+                    ))
+                    .map_err(|e| JsError::new(&e.to_string()))?
+                    .to_string(),
                 ];
 
                 let fee_req = AleoProgramRequest::new(
@@ -129,5 +140,58 @@ impl AleoTransfer {
         } else {
             Ok(AleoRequest::new(program_req, None, query))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{utils, AleoTransfer, CurrentNetwork};
+    use snarkvm_console::program::{Plaintext, Record};
+    use std::str::FromStr;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_transfer_new() {
+        let (_private_key_owner, _view_key_owner, address_owner) =
+            utils::helpers::generate_account().unwrap();
+
+        let input_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+            "{{
+  owner: {}.private,
+  microcredits: 50000000u64.private,
+  _nonce: 0group.public
+}}",
+            address_owner.address()
+        ))
+        .unwrap();
+
+        let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+            "{{
+  owner: {}.private,
+  microcredits: 10000u64.private,
+  _nonce: 0group.public
+}}",
+            address_owner.address()
+        ))
+        .unwrap();
+
+        let (_, _, address_recipient) = utils::helpers::generate_account().unwrap();
+
+        let transfer = AleoTransfer::new(
+            input_record.to_string(),
+            address_recipient.address(),
+            1000000,
+            Some(200),
+            Some(fee_record.to_string()),
+        );
+        assert_eq!(transfer.input_record(), input_record.to_string());
+        assert_eq!(transfer.recipient(), address_recipient.address());
+        assert_eq!(transfer.amount(), 1000000);
+        assert_eq!(transfer.fee(), Some(200));
+        assert_eq!(transfer.fee_record(), Some(fee_record.to_string()));
+        console_log!("test_transfer_new: {:?}", transfer)
     }
 }
