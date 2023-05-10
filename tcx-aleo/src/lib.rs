@@ -8,11 +8,16 @@ mod signer;
 mod utils;
 mod viewkey;
 
+pub use crate::address::AleoAddress;
+pub use crate::privatekey::AleoPrivateKey;
+pub use crate::request::AleoRequest;
+pub use crate::viewkey::AleoViewKey;
+#[macro_use]
+extern crate failure;
+
 type CurrentNetwork = Testnet3;
 
 static CURRENT_NETWORK_WORDS: &str = "testnet3";
-
-extern crate failure;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum Error {

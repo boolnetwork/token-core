@@ -98,7 +98,7 @@ impl Display for AleoRequest {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(bound = "")]
-pub struct AleoProgramRequest {
+pub(crate) struct AleoProgramRequest {
     pub program_id: String,
     pub function_name: String,
     pub inputs: Vec<String>,

@@ -2,6 +2,7 @@ use crate::address::AleoAddress;
 use crate::privatekey::AleoPrivateKey;
 use crate::Error::{CustomError, InvalidViewKey};
 use crate::{CurrentNetwork, Error};
+use serde::{Deserialize, Serialize};
 use snarkvm_console::account::{ComputeKey, PrivateKey, ViewKey};
 use snarkvm_console::program::{Ciphertext, Record};
 use std::fmt::{Display, Formatter};
@@ -11,7 +12,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsError, JsValue};
 
 #[wasm_bindgen]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AleoViewKey(String);
 
 #[wasm_bindgen]

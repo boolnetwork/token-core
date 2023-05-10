@@ -1,4 +1,5 @@
 use crate::{CurrentNetwork, Error};
+use serde::{Deserialize, Serialize};
 use snarkvm_console::account::PrivateKey;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -7,6 +8,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsError;
 
 #[wasm_bindgen]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AleoPrivateKey(String);
 
 #[wasm_bindgen]
@@ -58,9 +60,13 @@ impl FromStr for AleoPrivateKey {
 #[cfg(test)]
 mod tests {
     use crate::privatekey::AleoPrivateKey;
-    use crate::CurrentNetwork;
+    use crate::{utils, CurrentNetwork};
     use snarkvm_console::account::{PrivateKey, TestRng};
     use std::str::FromStr;
+    use wasm_bindgen::JsValue;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
 
     const ITERATIONS: u64 = 1000;
 
@@ -76,4 +82,53 @@ mod tests {
     }
 
     //todo test wasm methods
+    #[test]
+    fn test_new_private_key() {
+        for _ in 0..ITERATIONS {
+            let (private_key, _view_key, _address) = utils::helpers::generate_account().unwrap();
+            let new_private_key = AleoPrivateKey::new(private_key.to_string())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+            assert_eq!(private_key, new_private_key)
+        }
+    }
+
+    #[test]
+    fn test_get_private_key() {
+        for _ in 0..ITERATIONS {
+            let (private_key, _view_key, _address) = utils::helpers::generate_account().unwrap();
+            let private_key_s = private_key.key();
+            assert_eq!(private_key.to_string(), private_key_s)
+        }
+    }
+
+    #[test]
+    fn test_set_private_key() {
+        for _ in 0..ITERATIONS {
+            let (mut private_key1, _view_key1, _address1) =
+                utils::helpers::generate_account().unwrap();
+            let (private_key2, _view_key2, _address2) = utils::helpers::generate_account().unwrap();
+            private_key1
+                .set_key(private_key2.key())
+                .map_err(|e| JsValue::from(e))
+                .unwrap();
+            assert_eq!(private_key1.key(), private_key2.key())
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_private_key_wasm() {
+        let (mut private_key1, _view_key1, _address1) = utils::helpers::generate_account().unwrap();
+        console_log!("private_key1: {}", private_key1);
+        console_log!("key in private_key1: {}", private_key1.key());
+        let (private_key2, _view_key2, _address2) = utils::helpers::generate_account().unwrap();
+        console_log!("key in private_key2: {}", private_key2.key());
+        private_key1
+            .set_key(private_key2.key())
+            .map_err(|e| JsValue::from(e))
+            .unwrap();
+        assert_eq!(private_key1.key(), private_key2.key());
+        console_log!("key in private_key1 after set: {}", private_key1.key());
+    }
 }
