@@ -82,8 +82,6 @@ impl TryFrom<&StarknetTxIn> for UnsignedTx {
                         FieldElement::from_str(&tx.amount)?,
                     ],
                 };
-                println!("Call: {:?}", call);
-
                 UnsignedTx {
                     sender: FieldElement::from_str(&tx.sender)?,
                     chain_id: FieldElement::from_str(&tx.chain_id)?,
@@ -106,12 +104,8 @@ impl TransactionSigner<StarknetTxIn, StarknetTxOut> for Keystore {
         address: &str,
         tx: &StarknetTxIn,
     ) -> tcx_chain::Result<StarknetTxOut> {
-        println!("111111111");
-
         let sk = self.find_private_key(symbol, address)?;
         let unsigned_tx = UnsignedTx::try_from(tx)?;
-        println!("unsigned_tx: {:?}", unsigned_tx);
-
         let sig = match sk {
             TypedPrivateKey::Starknet(sk) => {
                 let msg_to_sign = unsigned_tx
@@ -121,7 +115,6 @@ impl TransactionSigner<StarknetTxIn, StarknetTxOut> for Keystore {
             }
             _ => return Err(failure::Error::from(crate::Error::InvalidStarknetCurveType)),
         };
-        println!("sig: {:?}", sig);
         let call_data = unsigned_tx
             .raw_tx
             .raw_calldata()
