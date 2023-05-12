@@ -4165,9 +4165,9 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.162"
+version = "1.0.163"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71b2f6e1ab5c2b98c05f0f35b236b22e8df7ead6ffbf51d7808da7f8817e7ab6"
+checksum = "2113ab51b87a539ae008b5c6c02dc020ffa39afd2d83cffcb3f4eb2722cebec2"
 dependencies = [
  "serde_derive",
 ]
@@ -4204,9 +4204,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.162"
+version = "1.0.163"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2a0814352fd64b58489904a44ea8d90cb1a91dcb6b4f5ebabc32c8318e93cb6"
+checksum = "8c805777e3930c8883389c602315a24224bcc738b63905ef87cd1420353ea93e"
 dependencies = [
  "proc-macro2 1.0.56",
  "quote 1.0.26",
@@ -4429,8 +4429,8 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "snarkvm-algorithms"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "aleo-std",
  "anyhow",
@@ -4456,8 +4456,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-account",
  "snarkvm-circuit-algorithms",
@@ -4470,8 +4470,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-account"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-algorithms",
  "snarkvm-circuit-network",
@@ -4481,8 +4481,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-algorithms"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-types",
  "snarkvm-console-algorithms",
@@ -4491,8 +4491,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-collections"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-algorithms",
  "snarkvm-circuit-types",
@@ -4501,8 +4501,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-environment"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "indexmap",
  "itertools 0.10.5",
@@ -4519,13 +4519,13 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-environment-witness"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 
 [[package]]
 name = "snarkvm-circuit-network"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-algorithms",
  "snarkvm-circuit-collections",
@@ -4535,8 +4535,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-program"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-account",
  "snarkvm-circuit-collections",
@@ -4548,8 +4548,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-address",
@@ -4563,8 +4563,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-address"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-boolean",
@@ -4576,8 +4576,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-boolean"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-console-types-boolean",
@@ -4585,8 +4585,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-field"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-boolean",
@@ -4595,8 +4595,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-group"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-boolean",
@@ -4607,8 +4607,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-integers"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-boolean",
@@ -4618,8 +4618,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-scalar"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-boolean",
@@ -4629,8 +4629,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-circuit-types-string"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-circuit-environment",
  "snarkvm-circuit-types-boolean",
@@ -4641,8 +4641,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-account",
  "snarkvm-console-algorithms",
@@ -4654,8 +4654,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-account"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "bs58 0.4.0",
  "snarkvm-console-network",
@@ -4664,8 +4664,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-algorithms"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "blake2s_simd",
  "smallvec 1.10.0",
@@ -4676,8 +4676,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-collections"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "aleo-std",
  "rayon",
@@ -4687,8 +4687,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-network"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "anyhow",
  "indexmap",
@@ -4710,8 +4710,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-network-environment"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "anyhow",
  "bech32 0.9.1",
@@ -4727,8 +4727,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-program"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "enum_index",
  "enum_index_derive",
@@ -4746,8 +4746,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-address",
@@ -4761,8 +4761,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types-address"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-boolean",
@@ -4772,16 +4772,16 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types-boolean"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
 ]
 
 [[package]]
 name = "snarkvm-console-types-field"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-boolean",
@@ -4789,8 +4789,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types-group"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-boolean",
@@ -4800,8 +4800,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types-integers"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-boolean",
@@ -4810,8 +4810,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types-scalar"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-boolean",
@@ -4820,8 +4820,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-console-types-string"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "snarkvm-console-network-environment",
  "snarkvm-console-types-boolean",
@@ -4831,8 +4831,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-curves"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "rand 0.8.3",
  "rayon",
@@ -4845,8 +4845,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-fields"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "aleo-std",
  "anyhow",
@@ -4862,8 +4862,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-parameters"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "aleo-std",
  "anyhow",
@@ -4889,8 +4889,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-r1cs"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
@@ -4905,8 +4905,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-synthesizer"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "aleo-std",
  "anyhow",
@@ -4934,8 +4934,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-utilities"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "aleo-std",
  "anyhow",
@@ -4953,8 +4953,8 @@ dependencies = [
 
 [[package]]
 name = "snarkvm-utilities-derives"
-version = "0.11.0"
-source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#553d4a7dc0d0724ec370311a42e69424e0ec342a"
+version = "0.11.1"
+source = "git+https://github.com/ABMatrix/snarkVM.git?branch=ABMatrix/token-core#1a69546a840273967a05e933e07abcd31d72f999"
 dependencies = [
  "proc-macro2 1.0.56",
  "quote 1.0.26",

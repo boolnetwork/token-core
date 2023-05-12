@@ -65,7 +65,7 @@ impl AleoRequest {
 }
 
 impl AleoRequest {
-    pub(crate) async fn sign(
+    pub async fn sign(
         &self,
         private_key: &AleoPrivateKey,
     ) -> Result<(Request<CurrentNetwork>, Option<Request<CurrentNetwork>>)> {

@@ -1,8 +1,9 @@
 use crate::request::AleoProgramRequest;
-use crate::Error::{FeeRecordMissed, InvalidAleoRequest};
+use crate::Error::{CustomError, FeeRecordMissed, InvalidAleoRequest};
 use crate::{AleoRequest, CurrentNetwork};
 use snarkvm_console::program::{Plaintext, Record, Value, U64};
 use std::str::FromStr;
+use tcx_constants::Result;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsError;
 
@@ -90,16 +91,23 @@ impl AleoTransfer {
     }
 
     pub fn to_aleo_request(&self, query: String) -> std::result::Result<AleoRequest, JsError> {
+        self.to_aleo_request_internal(query)
+            .map_err(|e| JsError::new(&e.to_string()))
+    }
+}
+
+impl AleoTransfer {
+    pub fn to_aleo_request_internal(&self, query: String) -> Result<AleoRequest> {
         let program_inputs_record =
             Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&self.input_record)
-                .map_err(|e| JsError::new(&e.to_string()))?;
+                .map_err(|e| CustomError(e.to_string()))?;
         let program_inputs = vec![
             Value::<CurrentNetwork>::Record(program_inputs_record).to_string(),
             Value::<CurrentNetwork>::from_str(&format!("{}", self.recipient))
-                .map_err(|e| JsError::new(&e.to_string()))?
+                .map_err(|e| CustomError(e.to_string()))?
                 .to_string(),
             Value::<CurrentNetwork>::from_str(&format!("{}u64", self.amount))
-                .map_err(|e| JsError::new(&e.to_string()))?
+                .map_err(|e| CustomError(e.to_string()))?
                 .to_string(),
         ];
         let program_req = AleoProgramRequest::new(
@@ -114,7 +122,7 @@ impl AleoTransfer {
             if let Some(fee_record) = self.fee_record.clone() {
                 let fee_record =
                     Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&fee_record)
-                        .map_err(|e| JsError::new(&e.to_string()))?;
+                        .map_err(|e| CustomError(e.to_string()))?;
 
                 let fee_inputs = vec![
                     Value::<CurrentNetwork>::Record(fee_record).to_string(),
@@ -122,7 +130,7 @@ impl AleoTransfer {
                         "{}",
                         U64::<CurrentNetwork>::new(fee)
                     ))
-                    .map_err(|e| JsError::new(&e.to_string()))?
+                    .map_err(|e| CustomError(e.to_string()))?
                     .to_string(),
                 ];
 
@@ -135,7 +143,7 @@ impl AleoTransfer {
 
                 Ok(AleoRequest::new(program_req, Some(fee_req), query))
             } else {
-                Err(JsError::new(&FeeRecordMissed.to_string()))
+                Err(failure::Error::from(FeeRecordMissed))
             }
         } else {
             Ok(AleoRequest::new(program_req, None, query))
@@ -196,7 +204,7 @@ mod tests {
         console_log!("test_transfer_new: {:?}", transfer)
     }
 
-    #[cfg(target_arch = "wasm32")]
+    // #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen_test]
     fn test_transfer_set() {
         let (_private_key_owner, _view_key_owner, address_owner) =
