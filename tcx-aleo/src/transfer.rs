@@ -186,8 +186,13 @@ impl AleoTransfer {
 
 #[cfg(test)]
 mod tests {
+    use crate::request::AleoProgramRequest;
     use crate::{utils, AleoTransfer, CurrentNetwork};
-    use snarkvm_console::program::{Plaintext, Record};
+    use reqwest::Client;
+    use serde::{Deserialize, Serialize};
+    use serde_json::{json, Value};
+    use snarkvm_console::program::{Plaintext, Record, Request};
+    use snarkvm_synthesizer::Execution;
     use std::str::FromStr;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::*;
@@ -358,7 +363,42 @@ mod tests {
     //         QUERY.to_string(),
     //     );
     //
+    //     #[derive(Debug, Serialize)]
+    //     struct JsonRpcRequest<'a> {
+    //         jsonrpc: &'a str,
+    //         id: i32,
+    //         method: &'a str,
+    //         params: Value,
+    //     }
+    //
+    //     #[derive(Debug, Deserialize)]
+    //     struct JsonRpcResponse {
+    //         jsonrpc: String,
+    //         id: i32,
+    //         result: Value,
+    //     }
+    //
+    //     let url = "http://127.0.0.1:51234";
+    //     let client = Client::new();
+    //
+    //
     //     let program_request = transfer.to_program_request().map_err(|e| JsValue::from(e)).unwrap();
-    //     let fee_request = transfer.to_fee_request()
+    //     console_log!("program_request: {}", program_request.to_string());
+    //
+    //     let program_request_signed = private_key_owner.sign_program_request(program_request.to_string()).await.map_err(|e| JsValue::from(e)).unwrap();
+    //     let request_data = JsonRpcRequest {
+    //         jsonrpc: "2.0",
+    //         id: 1,
+    //         method: "execute_request",
+    //         params: json!( program_request_signed),
+    //     };
+    //     let request = client.post(url).json(&request_data).build().unwrap();
+    //     let response = client.execute(request).await.unwrap();
+    //     // // let response_json: JsonRpcResponse = response.json().await.unwrap();
+    //     // console_log!("5");
+    //     //
+    //     // console_log!("execute_request: {:?}",response)
+    //
+    //     // let fee_request = transfer.to_fee_request()
     // }
 }

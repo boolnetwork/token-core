@@ -90,10 +90,7 @@ impl AleoProgramRequest {
         Ok(inputs)
     }
 
-    pub(crate) async fn sign(
-        &self,
-        private_key: &AleoPrivateKey,
-    ) -> Result<Request<CurrentNetwork>> {
+    pub async fn sign(&self, private_key: &AleoPrivateKey) -> Result<Request<CurrentNetwork>> {
         let rng = &mut rand::thread_rng();
 
         // get program_id

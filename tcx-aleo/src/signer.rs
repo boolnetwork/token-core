@@ -1,8 +1,10 @@
 use crate::privatekey::AleoPrivateKey;
 use crate::request::AleoProgramRequest;
 use crate::CurrentNetwork;
+use crate::Error::CustomError;
 use snarkvm_console::account::{Field, Signature};
 use std::str::FromStr;
+use tcx_constants::Result;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsError, JsValue};
 
@@ -13,14 +15,10 @@ impl AleoPrivateKey {
     pub async fn sign_program_request(
         &self,
         aleo_request: String,
-    ) -> std::result::Result<JsValue, JsError> {
-        let aleo_request = serde_json::from_str::<AleoProgramRequest>(&aleo_request)
-            .map_err(|e| JsError::new(&e.to_string()))?;
-        let signed = aleo_request
-            .sign(self)
+    ) -> std::result::Result<String, JsError> {
+        self.sign_program_request_internal(aleo_request)
             .await
-            .map_err(|e| JsError::new(&e.to_string()))?;
-        serde_wasm_bindgen::to_value(&signed).map_err(|e| JsError::new(&e.to_string()))
+            .map_err(|e| JsError::new(&e.to_string()))
     }
 
     /// Returns a signature for the given message (as field elements) using the private key.
@@ -72,6 +70,19 @@ impl AleoPrivateKey {
         )
         .map_err(|e| JsError::new(&e.to_string()))?;
         Ok(signature.to_string())
+    }
+}
+
+impl AleoPrivateKey {
+    pub async fn sign_program_request_internal(&self, aleo_request: String) -> Result<String> {
+        let aleo_request = serde_json::from_str::<AleoProgramRequest>(&aleo_request)
+            .map_err(|e| CustomError(e.to_string()))?;
+        let signed = aleo_request
+            .sign(self)
+            .await
+            .map_err(|e| CustomError(e.to_string()))?;
+        let signed = serde_json::to_string(&signed).map_err(|e| CustomError(e.to_string()))?;
+        Ok(signed)
     }
 }
 
@@ -146,8 +157,7 @@ mod tests {
             .map_err(|e| JsValue::from(e))
             .unwrap();
         console_log!("res1: {:?}", res1);
-        let program_signed_1 =
-            &serde_wasm_bindgen::from_value::<Request<CurrentNetwork>>(res1).unwrap();
+        let program_signed_1 = Request::<CurrentNetwork>::from_str(&res1).unwrap();
 
         assert_eq!(
             program_signed_1.program_id().to_string(),
@@ -183,8 +193,7 @@ mod tests {
             .map_err(|e| JsValue::from(e))
             .unwrap();
         console_log!("res2: {:?}", res2);
-        let program_signed_2 =
-            &serde_wasm_bindgen::from_value::<Request<CurrentNetwork>>(res2).unwrap();
+        let program_signed_2 = Request::<CurrentNetwork>::from_str(&res2).unwrap();
 
         assert_eq!(
             program_signed_2.program_id().to_string(),
