@@ -15,6 +15,8 @@ default = ["console_error_panic_hook"]
 tcx-constants = { path = "../tcx-constants" }
 snarkvm-console = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["wasm"] }
 snarkvm-synthesizer = { git = "https://github.com/ABMatrix/snarkVM.git", branch = "ABMatrix/token-core", features = ["wasm"] }
+#snarkvm-console = {version = "0.11.0", fearures = ["wasm"]}
+#snarkvm-synthesizer = {version = "0.11.0", fearures = ["wasm"]}
 failure = "0.1.5"
 reqwest = "0.11"
 wasm-bindgen = { version = "0.2" }

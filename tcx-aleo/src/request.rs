@@ -204,7 +204,7 @@ mod tests {
     #[tokio::test]
     async fn test_query_program() {
         let response =
-            utils::query_get("https://vm.aleo.org/api/testnet3/program/OldDuck.aleo".to_string())
+            utils::query_get("https://vm.aleo.org/api/testnet3/program/credits.aleo".to_string())
                 .await
                 .unwrap();
         let text = response
@@ -215,7 +215,7 @@ mod tests {
         let program = serde_json::from_str::<Program<CurrentNetwork>>(&text)
             .map_err(|e| CustomError(e.to_string()))
             .unwrap();
-        assert_eq!("OldDuck.aleo", program.id().to_string())
+        assert_eq!("credits.aleo", program.id().to_string())
     }
 
     #[cfg(not(target_arch = "wasm32"))]
