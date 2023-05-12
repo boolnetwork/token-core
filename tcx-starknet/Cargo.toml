@@ -1,0 +1,20 @@
+[package]
+name = "tcx-starknet"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tcx-chain = { path = "../tcx-chain" }
+tcx-constants = { path = "../tcx-constants" }
+tcx-primitive = { path = "../tcx-primitive" }
+#starknet-core = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
+#starknet-accounts = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
+starknet-core = { path = "../../starknet-rs/starknet-core" }
+starknet-accounts = { path = "../../starknet-rs/starknet-accounts" }
+hex = "0.4.0"
+failure = "0.1.5"
+prost = "0.6.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

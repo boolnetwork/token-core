@@ -59,4 +59,8 @@ fn main() {
     // tcx-sui
     env::set_var("OUT_DIR", "../tcx-sui/src");
     prost_build::compile_protos(&["src/sui.proto"], &["src/"]).unwrap();
+
+    // tcx-starknet
+    env::set_var("OUT_DIR", "../tcx-starknet/src");
+    prost_build::compile_protos(&["src/starknet.proto"], &["src/"]).unwrap();
 }

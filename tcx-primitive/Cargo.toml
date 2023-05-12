@@ -21,8 +21,10 @@ serde_json = "1.0.39"
 tiny-bip39 = "0.6.0"
 ed25519-bip32 = "0.3.1"
 blake2b_simd = "0.5.10"
-iop-keyvault = "0.0.5"
+iop-keyvault = "0.0.15"
 bls-signatures = "0.6.1"
+starknet-signers = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
+starknet-crypto = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
 #rust-crypto = "0.2"
 num-bigint = "0.2.3"
 num-traits = "0.2.8"
