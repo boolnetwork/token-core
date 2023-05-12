@@ -13,7 +13,6 @@ use wasm_bindgen::JsValue;
 
 #[wasm_bindgen]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(bound = "")]
 pub struct AleoProgramRequest {
     program_id: String,
     function_name: String,
@@ -54,12 +53,12 @@ impl AleoProgramRequest {
         self.query.clone()
     }
 
-    #[wasm_bindgen(getter)]
+    #[wasm_bindgen(setter)]
     pub fn set_program_id(&mut self, program_id: String) {
         self.program_id = program_id
     }
 
-    #[wasm_bindgen(getter)]
+    #[wasm_bindgen(setter)]
     pub fn set_function_name(&mut self, function_name: String) {
         self.function_name = function_name
     }
@@ -76,6 +75,21 @@ impl AleoProgramRequest {
 }
 
 impl AleoProgramRequest {
+    pub(crate) fn inputs_raw(&self) -> Result<Vec<Value<CurrentNetwork>>> {
+        let inputs_s = serde_json::from_str::<Vec<String>>(&self.inputs.clone())?;
+        let mut inputs = Vec::with_capacity(inputs_s.len());
+        for (index, input) in inputs_s.into_iter().enumerate() {
+            let value = Value::<CurrentNetwork>::from_str(&input).map_err(|e| {
+                InvalidAleoRequest(format!(
+                    "Failed to convert to Value of aleo #{index} for '{}/{}: {e}'",
+                    self.program_id, self.function_name
+                ))
+            })?;
+            inputs.push(value)
+        }
+        Ok(inputs)
+    }
+
     pub(crate) async fn sign(
         &self,
         private_key: &AleoPrivateKey,
@@ -119,16 +133,7 @@ impl AleoProgramRequest {
         };
 
         // Prepare the inputs.
-        let inputs_s = serde_json::from_str::<Vec<String>>(&self.inputs.clone())?;
-        let mut inputs = Vec::with_capacity(inputs_s.len());
-        for (index, input) in inputs_s.into_iter().enumerate() {
-            let value = Value::<CurrentNetwork>::from_str(&input).map_err(|e| {
-                InvalidAleoRequest(format!(
-                    "Failed to convert to Value of aleo #{index} for '{program_id}/{function_name}: {e}'"
-                ))
-            })?;
-            inputs.push(value)
-        }
+        let inputs = self.inputs_raw()?;
 
         let request = Request::sign(
             &private_key.raw()?,

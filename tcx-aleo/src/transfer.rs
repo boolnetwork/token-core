@@ -240,143 +240,125 @@ mod tests {
         console_log!("test_transfer_new: {:?}", transfer)
     }
 
-    //     // #[cfg(target_arch = "wasm32")]
-    //     #[wasm_bindgen_test]
-    //     fn test_transfer_set() {
-    //         let (_private_key_owner, _view_key_owner, address_owner) =
-    //             utils::helpers::generate_account().unwrap();
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn test_transfer_set() {
+        let (_private_key_owner, _view_key_owner, address_owner) =
+            utils::helpers::generate_account().unwrap();
+
+        let input_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+            "{{
+      owner: {}.private,
+      microcredits: 50000000u64.private,
+      _nonce: 0group.public
+    }}",
+            address_owner.address()
+        ))
+        .unwrap();
+
+        let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+            "{{
+      owner: {}.private,
+      microcredits: 10000u64.private,
+      _nonce: 0group.public
+    }}",
+            address_owner.address()
+        ))
+        .unwrap();
+
+        let (_, _, address_recipient) = utils::helpers::generate_account().unwrap();
+
+        let mut transfer = AleoTransfer::new(
+            input_record.to_string(),
+            address_recipient.address(),
+            1000000,
+            Some(200),
+            Some(fee_record.to_string()),
+            QUERY.to_string(),
+        );
+        assert_eq!(transfer.input_record(), input_record.to_string());
+        assert_eq!(transfer.recipient(), address_recipient.address());
+        assert_eq!(transfer.amount(), 1000000);
+        assert_eq!(transfer.fee(), Some(200));
+        assert_eq!(transfer.fee_record(), Some(fee_record.to_string()));
+
+        let (_private_key_owner, _view_key_owner, address_owner_new) =
+            utils::helpers::generate_account().unwrap();
+
+        let input_record_new =
+            Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+                "{{
+      owner: {}.private,
+      microcredits: 10000000u64.private,
+      _nonce: 0group.public
+    }}",
+                address_owner_new.address()
+            ))
+            .unwrap();
+
+        let fee_record_new =
+            Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+                "{{
+      owner: {}.private,
+      microcredits: 20000u64.private,
+      _nonce: 0group.public
+    }}",
+                address_owner_new.address()
+            ))
+            .unwrap();
+
+        let (_, _, address_recipient_new) = utils::helpers::generate_account().unwrap();
+        transfer.set_fee(Some(100));
+        transfer.set_amount(20000000);
+        transfer.set_recipient(address_recipient_new.address());
+        transfer.set_fee_record(Some(fee_record_new.to_string()));
+        transfer.set_input_record(input_record_new.to_string());
+        assert_eq!(transfer.input_record(), input_record_new.to_string());
+        assert_eq!(transfer.recipient(), address_recipient_new.address());
+        assert_eq!(transfer.amount(), 20000000);
+        assert_eq!(transfer.fee(), Some(100));
+        assert_eq!(transfer.fee_record(), Some(fee_record_new.to_string()));
+    }
+
+    // #[cfg(target_arch = "wasm32")]
+    // #[wasm_bindgen_test]
+    // async fn test_to_aleo_request() {
+    //     let (private_key_owner, _view_key_owner, address_owner) =
+    //         utils::helpers::generate_account().unwrap();
     //
-    //         let input_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-    //             "{{
+    //     let input_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+    //         "{{
     //   owner: {}.private,
     //   microcredits: 50000000u64.private,
     //   _nonce: 0group.public
     // }}",
-    //             address_owner.address()
-    //         ))
+    //         address_owner.address()
+    //     ))
     //         .unwrap();
     //
-    //         let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-    //             "{{
+    //     let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
+    //         "{{
     //   owner: {}.private,
     //   microcredits: 10000u64.private,
     //   _nonce: 0group.public
     // }}",
-    //             address_owner.address()
-    //         ))
+    //         address_owner.address()
+    //     ))
     //         .unwrap();
     //
-    //         let (_, _, address_recipient) = utils::helpers::generate_account().unwrap();
+    //     let (private_key_recipient, _, address_recipient) =
+    //         utils::helpers::generate_account().unwrap();
     //
-    //         let mut transfer = AleoTransfer::new(
-    //             input_record.to_string(),
-    //             address_recipient.address(),
-    //             1000000,
-    //             Some(200),
-    //             Some(fee_record.to_string()),
-    //         );
-    //         assert_eq!(transfer.input_record(), input_record.to_string());
-    //         assert_eq!(transfer.recipient(), address_recipient.address());
-    //         assert_eq!(transfer.amount(), 1000000);
-    //         assert_eq!(transfer.fee(), Some(200));
-    //         assert_eq!(transfer.fee_record(), Some(fee_record.to_string()));
+    //     let transfer = AleoTransfer::new(
+    //         input_record.to_string(),
+    //         address_recipient.address(),
+    //         1000000,
+    //         Some(200),
+    //         Some(fee_record.to_string()),
+    //         QUERY.to_string(),
+    //     );
     //
-    //         let (_private_key_owner, _view_key_owner, address_owner_new) =
-    //             utils::helpers::generate_account().unwrap();
-    //
-    //         let input_record_new =
-    //             Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-    //                 "{{
-    //   owner: {}.private,
-    //   microcredits: 10000000u64.private,
-    //   _nonce: 0group.public
-    // }}",
-    //                 address_owner_new.address()
-    //             ))
-    //             .unwrap();
-    //
-    //         let fee_record_new =
-    //             Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-    //                 "{{
-    //   owner: {}.private,
-    //   microcredits: 20000u64.private,
-    //   _nonce: 0group.public
-    // }}",
-    //                 address_owner_new.address()
-    //             ))
-    //             .unwrap();
-    //
-    //         let (_, _, address_recipient_new) = utils::helpers::generate_account().unwrap();
-    //         transfer.set_fee(Some(100));
-    //         transfer.set_amount(20000000);
-    //         transfer.set_recipient(address_recipient_new.address());
-    //         transfer.set_fee_record(Some(fee_record_new.to_string()));
-    //         transfer.set_input_record(input_record_new.to_string());
-    //         assert_eq!(transfer.input_record(), input_record_new.to_string());
-    //         assert_eq!(transfer.recipient(), address_recipient_new.address());
-    //         assert_eq!(transfer.amount(), 20000000);
-    //         assert_eq!(transfer.fee(), Some(100));
-    //         assert_eq!(transfer.fee_record(), Some(fee_record_new.to_string()));
-    //     }
-    //
-    //     #[cfg(target_arch = "wasm32")]
-    //     #[wasm_bindgen_test]
-    //     async fn test_to_aleo_request() {
-    //         let (private_key_owner, _view_key_owner, address_owner) =
-    //             utils::helpers::generate_account().unwrap();
-    //
-    //         let input_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-    //             "{{
-    //   owner: {}.private,
-    //   microcredits: 50000000u64.private,
-    //   _nonce: 0group.public
-    // }}",
-    //             address_owner.address()
-    //         ))
-    //         .unwrap();
-    //
-    //         let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-    //             "{{
-    //   owner: {}.private,
-    //   microcredits: 10000u64.private,
-    //   _nonce: 0group.public
-    // }}",
-    //             address_owner.address()
-    //         ))
-    //         .unwrap();
-    //
-    //         let (private_key_recipient, _, address_recipient) =
-    //             utils::helpers::generate_account().unwrap();
-    //
-    //         let transfer = AleoTransfer::new(
-    //             input_record.to_string(),
-    //             address_recipient.address(),
-    //             1000000,
-    //             Some(200),
-    //             Some(fee_record.to_string()),
-    //         );
-    //
-    //         let query = "https://vm.aleo.org/api".to_string();
-    //
-    //         let request = transfer
-    //             .to_aleo_request(query)
-    //             .map_err(|e| JsValue::from(e))
-    //             .unwrap();
-    //         let signed_correct = private_key_owner
-    //             .sign_program_request(request.to_string())
-    //             .await;
-    //         assert!(signed_correct.is_ok());
-    //         console_log!(
-    //             "test_to_aleo_request should correct: {:?}",
-    //             signed_correct.map_err(|e| JsValue::from(e))
-    //         );
-    //         let signed_incorrect = private_key_recipient
-    //             .sign_program_request(request.to_string())
-    //             .await;
-    //         assert!(signed_incorrect.is_err());
-    //         console_log!(
-    //             "test_to_aleo_request should incorrect, error: {:?}",
-    //             signed_incorrect.map_err(|e| JsValue::from(e))
-    //         )
-    //     }
+    //     let program_request = transfer.to_program_request().map_err(|e| JsValue::from(e)).unwrap();
+    //     let fee_request = transfer.to_fee_request()
+    // }
 }
