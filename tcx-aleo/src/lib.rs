@@ -11,7 +11,6 @@ mod viewkey;
 
 pub use crate::address::AleoAddress;
 pub use crate::privatekey::AleoPrivateKey;
-pub use crate::request::AleoRequest;
 pub use crate::transfer::AleoTransfer;
 pub use crate::viewkey::AleoViewKey;
 #[macro_use]

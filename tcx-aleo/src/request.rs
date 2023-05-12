@@ -9,53 +9,64 @@ use std::str;
 use std::str::FromStr;
 use tcx_constants::Result;
 use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
 
 #[wasm_bindgen]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(bound = "")]
-pub struct AleoRequest {
-    /// program request
-    request: String,
-    /// fee request, record and fee_in_microcredits
-    fee: Option<String>,
-    /// The endpoint to query node state from
+pub struct AleoProgramRequest {
+    program_id: String,
+    function_name: String,
+    /// json of Vec<String>
+    inputs: String,
     query: String,
 }
 
 #[wasm_bindgen]
-impl AleoRequest {
+impl AleoProgramRequest {
     #[wasm_bindgen(constructor)]
-    pub fn new(request: String, fee: Option<String>, query: String) -> AleoRequest {
-        AleoRequest {
-            request,
-            fee,
+    pub fn new(program_id: String, function_name: String, inputs: String, query: String) -> Self {
+        AleoProgramRequest {
+            program_id,
+            function_name,
+            inputs,
             query,
         }
     }
 
     #[wasm_bindgen(getter)]
-    pub fn request(&self) -> String {
-        self.request.clone()
-    }
-
-    #[wasm_bindgen(setter)]
-    pub fn set_request(&mut self, request: String) {
-        self.request = request
+    pub fn program_id(&self) -> String {
+        self.program_id.clone()
     }
 
     #[wasm_bindgen(getter)]
-    pub fn fee(&self) -> Option<String> {
-        self.fee.clone()
+    pub fn function_name(&self) -> String {
+        self.function_name.clone()
     }
 
-    #[wasm_bindgen(setter)]
-    pub fn set_fee(&mut self, fee: Option<String>) {
-        self.fee = fee
+    #[wasm_bindgen(getter)]
+    pub fn inputs(&self) -> String {
+        self.inputs.clone()
     }
 
     #[wasm_bindgen(getter)]
     pub fn query(&self) -> String {
         self.query.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn set_program_id(&mut self, program_id: String) {
+        self.program_id = program_id
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn set_function_name(&mut self, function_name: String) {
+        self.function_name = function_name
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_inputs(&mut self, inputs: String) {
+        self.inputs = inputs
     }
 
     #[wasm_bindgen(setter)]
@@ -64,58 +75,9 @@ impl AleoRequest {
     }
 }
 
-impl AleoRequest {
-    pub async fn sign(
-        &self,
-        private_key: &AleoPrivateKey,
-    ) -> Result<(Request<CurrentNetwork>, Option<Request<CurrentNetwork>>)> {
-        let program_request = serde_json::from_str::<AleoProgramRequest>(&self.request)
-            .map_err(|e| InvalidAleoRequest(e.to_string()))?;
-
-        let request = program_request
-            .sign(self.query.clone(), private_key)
-            .await?;
-        if let Some(fee) = &self.fee {
-            let fee = serde_json::from_str::<AleoProgramRequest>(&fee)
-                .map_err(|e| InvalidAleoRequest(e.to_string()))?;
-            let fee_request = fee.sign(self.query.clone(), private_key).await?;
-            Ok((request, Some(fee_request)))
-        } else {
-            Ok((request, None))
-        }
-    }
-}
-
-impl Display for AleoRequest {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            serde_json::to_string(self).map_err::<std::fmt::Error, _>(ser::Error::custom)?
-        )
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(bound = "")]
-pub(crate) struct AleoProgramRequest {
-    pub program_id: String,
-    pub function_name: String,
-    pub inputs: Vec<String>,
-}
-
 impl AleoProgramRequest {
-    pub(crate) fn new(program_id: String, function_name: String, inputs: Vec<String>) -> Self {
-        AleoProgramRequest {
-            program_id,
-            function_name,
-            inputs,
-        }
-    }
-
-    async fn sign(
+    pub(crate) async fn sign(
         &self,
-        query: String,
         private_key: &AleoPrivateKey,
     ) -> Result<Request<CurrentNetwork>> {
         let rng = &mut rand::thread_rng();
@@ -130,8 +92,8 @@ impl AleoProgramRequest {
 
         // request node to get program info
         let response = utils::query_get(format!(
-            "{query}/{CURRENT_NETWORK_WORDS}/program/{}",
-            self.program_id
+            "{}/{CURRENT_NETWORK_WORDS}/program/{}",
+            self.query, self.program_id
         ))
         .await?;
         let text = response
@@ -157,12 +119,12 @@ impl AleoProgramRequest {
         };
 
         // Prepare the inputs.
-        let mut inputs = Vec::with_capacity(self.inputs.len());
-        let req_inputs = self.inputs.clone();
-        for (index, input) in req_inputs.into_iter().enumerate() {
+        let inputs_s = serde_json::from_str::<Vec<String>>(&self.inputs.clone())?;
+        let mut inputs = Vec::with_capacity(inputs_s.len());
+        for (index, input) in inputs_s.into_iter().enumerate() {
             let value = Value::<CurrentNetwork>::from_str(&input).map_err(|e| {
                 InvalidAleoRequest(format!(
-                    "Failed to parse input #{index} for '{program_id}/{function_name}: {e}'"
+                    "Failed to convert to Value of aleo #{index} for '{program_id}/{function_name}: {e}'"
                 ))
             })?;
             inputs.push(value)
@@ -193,12 +155,13 @@ impl Display for AleoProgramRequest {
 
 #[cfg(test)]
 mod tests {
-    use crate::request::{AleoProgramRequest, AleoRequest};
+    use crate::request::AleoProgramRequest;
     use crate::Error::CustomError;
     use crate::{utils, CurrentNetwork};
     use snarkvm_console::program::{Plaintext, Record};
     use snarkvm_synthesizer::Program;
     use std::str::FromStr;
+    use wasm_bindgen::JsValue;
 
     #[cfg(not(target_arch = "wasm32"))]
     #[tokio::test]
@@ -224,61 +187,17 @@ mod tests {
         let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
 
         let query = "https://vm.aleo.org/api".to_string();
+        let inputs = vec![address.address(), "10000u64".to_string()];
         let aleo_program_request = AleoProgramRequest {
             program_id: "credits.aleo".to_string(),
             function_name: "mint".to_string(),
-            inputs: vec![address.address(), "10000u64".to_string()],
-        };
-
-        let req = aleo_program_request
-            .sign(query, &private_key)
-            .await
-            .unwrap();
-        println!("{}", req);
-        assert_eq!(req.inputs().len(), aleo_program_request.inputs.len())
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    #[tokio::test]
-    async fn test_aleo_req_sign() {
-        let (private_key, _view_key, address) = utils::helpers::generate_account().unwrap();
-
-        let query = "https://vm.aleo.org/api".to_string();
-        let aleo_program_request = AleoProgramRequest {
-            program_id: "credits.aleo".to_string(),
-            function_name: "mint".to_string(),
-            inputs: vec![address.address(), "10000u64".to_string()],
-        };
-
-        let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-            "{{
-  owner: {}.private,
-  microcredits: 50000000u64.private,
-  _nonce: 6284621587203125875149547889323796299059507753986233073895647656902474803214group.public
-}}",
-            address.address()
-        ))
-        .unwrap();
-
-        let fee_request = AleoProgramRequest {
-            program_id: "credits.aleo".to_string(),
-            function_name: "fee".to_string(),
-
-            inputs: vec![fee_record.to_string(), "1000u64".to_string()],
-        };
-
-        let aleo_request = AleoRequest {
-            request: aleo_program_request.to_string(),
-            fee: Some(fee_request.to_string()),
+            inputs: serde_json::to_string(&inputs).unwrap(),
             query,
         };
 
-        let req = aleo_request.sign(&private_key).await.unwrap();
-        println!("{}", req.0);
-        println!("{:?}", req.1);
-        assert_eq!(req.0.inputs().len(), aleo_program_request.inputs.len());
-        assert!(req.1.is_some());
-        assert_eq!(req.1.unwrap().inputs().len(), fee_request.inputs.len())
+        let req = aleo_program_request.sign(&private_key).await.unwrap();
+        println!("{}", req);
+        assert_eq!(req.inputs().len(), inputs.len())
     }
 
     #[test]
@@ -288,34 +207,13 @@ mod tests {
         let aleo_program_request = AleoProgramRequest {
             program_id: "credits.aleo".to_string(),
             function_name: "mint".to_string(),
-            inputs: vec![address.address(), "10000u64".to_string()],
+            inputs: serde_json::to_string(&vec![address.address(), "10000u64".to_string()])
+                .unwrap(),
+            query: query.clone(),
         };
 
-        let fee_record = Record::<CurrentNetwork, Plaintext<CurrentNetwork>>::from_str(&format!(
-            "{{
-  owner: {}.private,
-  microcredits: 50000000u64.private,
-  _nonce: 6284621587203125875149547889323796299059507753986233073895647656902474803214group.public
-}}",
-            address.address()
-        ))
-        .unwrap();
-
-        let fee_request = AleoProgramRequest {
-            program_id: "credits.aleo".to_string(),
-            function_name: "fee".to_string(),
-
-            inputs: vec![fee_record.to_string(), "1000u64".to_string()],
-        };
-
-        let aleo_request = AleoRequest {
-            request: aleo_program_request.to_string(),
-            fee: Some(fee_request.to_string()),
-            query,
-        };
-
-        let s = serde_json::to_string(&aleo_request).unwrap();
-        let s_r = serde_json::from_str::<AleoRequest>(&s).unwrap();
-        assert_eq!(aleo_request, s_r)
+        let s = serde_json::to_string(&aleo_program_request).unwrap();
+        let s_r = serde_json::from_str::<AleoProgramRequest>(&s).unwrap();
+        assert_eq!(aleo_program_request, s_r)
     }
 }
