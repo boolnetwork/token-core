@@ -4838,17 +4838,19 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 [[package]]
 name = "starknet-accounts"
 version = "0.1.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
  "async-trait",
- "starknet-core 0.2.0",
+ "starknet-core",
  "starknet-providers",
- "starknet-signers 0.1.0",
+ "starknet-signers",
  "thiserror",
 ]
 
 [[package]]
 name = "starknet-core"
 version = "0.2.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
  "base64 0.13.0",
  "ethereum-types 0.12.1",
@@ -4857,33 +4859,16 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with 1.14.0",
- "sha3 0.10.5",
- "starknet-crypto 0.2.0",
- "starknet-ff 0.2.0",
- "thiserror",
-]
-
-[[package]]
-name = "starknet-core"
-version = "0.2.0"
-source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#5a8807917042a34fd3a182cb7fa20d4e75ef54a9"
-dependencies = [
- "base64 0.13.0",
- "ethereum-types 0.12.1",
- "flate2",
- "hex 0.4.3",
- "serde",
- "serde_json",
- "serde_with 1.14.0",
- "sha3 0.10.5",
- "starknet-crypto 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
- "starknet-ff 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
+ "sha3 0.10.7",
+ "starknet-crypto",
+ "starknet-ff",
  "thiserror",
 ]
 
 [[package]]
 name = "starknet-crypto"
 version = "0.2.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
  "crypto-bigint",
  "hex 0.4.3",
@@ -4893,29 +4878,9 @@ dependencies = [
  "num-traits",
  "rfc6979",
  "sha2 0.9.9",
- "starknet-crypto-codegen 0.1.0",
- "starknet-curve 0.1.0",
- "starknet-ff 0.2.0",
- "thiserror",
- "zeroize",
-]
-
-[[package]]
-name = "starknet-crypto"
-version = "0.2.0"
-source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#5a8807917042a34fd3a182cb7fa20d4e75ef54a9"
-dependencies = [
- "crypto-bigint",
- "hex 0.4.3",
- "hmac 0.11.0",
- "num-bigint 0.4.3",
- "num-integer",
- "num-traits",
- "rfc6979",
- "sha2 0.9.9",
- "starknet-crypto-codegen 0.1.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
- "starknet-curve 0.1.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
- "starknet-ff 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
+ "starknet-crypto-codegen",
+ "starknet-curve",
+ "starknet-ff",
  "thiserror",
  "zeroize",
 ]
@@ -4923,55 +4888,25 @@ dependencies = [
 [[package]]
 name = "starknet-crypto-codegen"
 version = "0.1.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
- "starknet-curve 0.1.0",
- "starknet-ff 0.2.0",
- "syn 1.0.101",
-]
-
-[[package]]
-name = "starknet-crypto-codegen"
-version = "0.1.0"
-source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#5a8807917042a34fd3a182cb7fa20d4e75ef54a9"
-dependencies = [
- "starknet-curve 0.1.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
- "starknet-ff 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
+ "starknet-curve",
+ "starknet-ff",
  "syn 1.0.101",
 ]
 
 [[package]]
 name = "starknet-curve"
 version = "0.1.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
- "starknet-ff 0.2.0",
-]
-
-[[package]]
-name = "starknet-curve"
-version = "0.1.0"
-source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#5a8807917042a34fd3a182cb7fa20d4e75ef54a9"
-dependencies = [
- "starknet-ff 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
+ "starknet-ff",
 ]
 
 [[package]]
 name = "starknet-ff"
 version = "0.2.0"
-dependencies = [
- "ark-ff",
- "bigdecimal",
- "crypto-bigint",
- "getrandom 0.2.9",
- "hex 0.4.3",
- "num-bigint 0.4.3",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "starknet-ff"
-version = "0.2.0"
-source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#5a8807917042a34fd3a182cb7fa20d4e75ef54a9"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
  "ark-ff",
  "bigdecimal",
@@ -4986,6 +4921,7 @@ dependencies = [
 [[package]]
 name = "starknet-providers"
 version = "0.2.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -4993,7 +4929,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with 1.14.0",
- "starknet-core 0.2.0",
+ "starknet-core",
  "thiserror",
  "url",
 ]
@@ -5001,21 +4937,11 @@ dependencies = [
 [[package]]
 name = "starknet-signers"
 version = "0.1.0"
+source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#175c9b58d5538a0264e724021947e80282c4af74"
 dependencies = [
  "async-trait",
- "starknet-core 0.2.0",
- "starknet-crypto 0.2.0",
- "thiserror",
-]
-
-[[package]]
-name = "starknet-signers"
-version = "0.1.0"
-source = "git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version#5a8807917042a34fd3a182cb7fa20d4e75ef54a9"
-dependencies = [
- "async-trait",
- "starknet-core 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
- "starknet-crypto 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
+ "starknet-core",
+ "starknet-crypto",
  "thiserror",
 ]
 
@@ -5417,8 +5343,8 @@ dependencies = [
  "serde_json",
  "sha2 0.9.9",
  "sp-core",
- "starknet-crypto 0.2.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
- "starknet-signers 0.1.0 (git+https://github.com/boolnetwork/starknet-rs.git?branch=fix-zeroize-version)",
+ "starknet-crypto",
+ "starknet-signers",
  "tcx-constants",
  "tiny-bip39 0.6.2",
 ]
@@ -5462,7 +5388,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starknet-accounts",
- "starknet-core 0.2.0",
+ "starknet-core",
  "tcx-chain",
  "tcx-constants",
  "tcx-primitive",
