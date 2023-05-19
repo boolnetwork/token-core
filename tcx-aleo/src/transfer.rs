@@ -103,8 +103,6 @@ impl AleoTransfer {
         &self,
         program_execution: String,
     ) -> std::result::Result<AleoProgramRequest, JsError> {
-        let program_execution = Execution::<CurrentNetwork>::from_str(&program_execution)
-            .map_err(|e| JsError::new(&e.to_string()))?;
         self.to_fee_request_internal(program_execution)
             .map_err(|e| JsError::new(&e.to_string()))
     }
@@ -133,10 +131,10 @@ impl AleoTransfer {
         ))
     }
 
-    pub fn to_fee_request_internal(
-        &self,
-        program_execution: Execution<CurrentNetwork>,
-    ) -> Result<AleoProgramRequest> {
+    pub fn to_fee_request_internal(&self, program_execution: String) -> Result<AleoProgramRequest> {
+        let program_execution = Execution::<CurrentNetwork>::from_str(&program_execution)
+            .map_err(|e| CustomError(e.to_string()))?;
+
         let fee = match self.fee {
             None => {
                 return Err(failure::Error::from(CustomError(
