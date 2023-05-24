@@ -76,7 +76,7 @@ impl AleoViewKey {
         Ok(addr)
     }
 
-    pub fn raw(&self) -> Result<ViewKey<CurrentNetwork>> {
+    fn raw(&self) -> Result<ViewKey<CurrentNetwork>> {
         let view_key = ViewKey::from_str(&self.key()).map_err(|_e| InvalidViewKey)?;
         Ok(view_key)
     }
