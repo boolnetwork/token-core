@@ -45,7 +45,7 @@ impl AleoAddress {
 }
 
 impl AleoAddress {
-    pub(crate) fn raw(&self) -> Result<Address<CurrentNetwork>> {
+    pub fn raw(&self) -> Result<Address<CurrentNetwork>> {
         let addr = Address::<CurrentNetwork>::from_str(&self.0).map_err(|_| InvalidAddress)?;
         Ok(addr)
     }

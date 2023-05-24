@@ -33,7 +33,7 @@ impl AleoPrivateKey {
 }
 
 impl AleoPrivateKey {
-    pub(crate) fn raw(&self) -> Result<PrivateKey<CurrentNetwork>> {
+    pub fn raw(&self) -> Result<PrivateKey<CurrentNetwork>> {
         let sk = PrivateKey::<CurrentNetwork>::from_str(&self.0)
             .map_err(|_| Error::InvalidPrivateKey)?;
         Ok(sk)
