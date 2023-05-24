@@ -9,10 +9,8 @@ edition = "2021"
 tcx-chain = { path = "../tcx-chain" }
 tcx-constants = { path = "../tcx-constants" }
 tcx-primitive = { path = "../tcx-primitive" }
-#starknet-core = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
-#starknet-accounts = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
-starknet-core = { path = "../../starknet-rs/starknet-core" }
-starknet-accounts = { path = "../../starknet-rs/starknet-accounts" }
+starknet-core = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
+starknet-accounts = { git = "https://github.com/boolnetwork/starknet-rs.git", branch = "fix-zeroize-version" }
 hex = "0.4.0"
 failure = "0.1.5"
 prost = "0.6.1"
