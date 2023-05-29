@@ -144,6 +144,11 @@ lazy_static! {
             network_id: 280,
             chain_id: 280,
         });
+        chain_infos.push(ChainInfo {
+            network: "CHAIN_SQL".to_string(),
+            network_id: 7181,
+            chain_id: 7181,
+        });
         RwLock::new(chain_infos)
     };
 }
