@@ -61,6 +61,11 @@ lazy_static! {
         });
         chain_infos.push(ChainInfo {
             network: "BOOL".to_string(),
+            network_id: 479,
+            chain_id: 479,
+        });
+        chain_infos.push(ChainInfo {
+            network: "BOOL_DEVNET".to_string(),
             network_id: 47,
             chain_id: 47,
         });
