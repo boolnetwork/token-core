@@ -65,12 +65,12 @@ lazy_static! {
             chain_id: 479,
         });
         chain_infos.push(ChainInfo {
-            network: "BOOL_DEVNET".to_string(),
+            network: "BOOL_TESTNET".to_string(),
             network_id: 47,
             chain_id: 47,
         });
         chain_infos.push(ChainInfo {
-            network: "BOOL_TESTNET".to_string(),
+            network: "BOOL_DEVNET".to_string(),
             network_id: 477,
             chain_id: 477,
         });
