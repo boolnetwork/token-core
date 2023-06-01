@@ -79,8 +79,8 @@ impl Address for FilecoinAddress {
         if !address.starts_with(ntwk) {
             return false;
         }
-
-        ForestAddress::from_str(address).is_ok()
+        true
+        // ForestAddress::from_str(address).is_ok()
     }
 }
 
