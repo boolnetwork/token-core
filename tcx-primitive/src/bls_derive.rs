@@ -54,7 +54,8 @@ impl DeterministicPrivateKey for BLSDeterministicPrivateKey {
     }
 
     fn from_mnemonic(mnemonic: &str) -> Result<Self> {
-        let mn = Mnemonic::from_phrase(mnemonic, Language::English)?;
+        let mn = Mnemonic::from_phrase(mnemonic, Language::English)
+            .map_err(|_| failure::err_msg("invalid mnemonic"))?;
         let seed = bip39::Seed::new(&mn, "");
         BLSDeterministicPrivateKey::from_seed(seed.as_bytes())
     }

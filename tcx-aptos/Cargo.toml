@@ -10,7 +10,7 @@ edition = "2021"
 tcx-chain = { path = "../tcx-chain" }
 tcx-constants = { path = "../tcx-constants" }
 tcx-primitive = { path = "../tcx-primitive" }
-sp-core = "2.0.0-rc3"
+sp-core = "15.0.0"
 prost = "0.6.1"
 prost-types = "0.6.1"
 serde = "1.0.136"

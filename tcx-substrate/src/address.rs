@@ -1,10 +1,9 @@
-use sp_core::crypto::Ss58AddressFormat;
+use sp_core::crypto::Ss58AddressFormatRegistry;
 use sp_core::crypto::Ss58Codec;
 use sp_core::sr25519::Public;
 use tcx_chain::Address;
 use tcx_constants::{CoinInfo, Result};
 use tcx_primitive::{PublicKey, Sr25519PublicKey, TypedPublicKey};
-
 pub struct SubstrateAddress();
 
 impl Address for SubstrateAddress {
@@ -14,10 +13,10 @@ impl Address for SubstrateAddress {
         let address = match coin.coin.as_str() {
             "KUSAMA" => sr_pk
                 .0
-                .to_ss58check_with_version(Ss58AddressFormat::KusamaAccount),
+                .to_ss58check_with_version(Ss58AddressFormatRegistry::KusamaAccount.into()),
             "POLKADOT" => sr_pk
                 .0
-                .to_ss58check_with_version(Ss58AddressFormat::PolkadotAccount),
+                .to_ss58check_with_version(Ss58AddressFormatRegistry::PolkadotAccount.into()),
             _ => "".to_owned(),
         };
 
@@ -27,8 +26,8 @@ impl Address for SubstrateAddress {
     fn is_valid(address: &str, coin: &CoinInfo) -> bool {
         match Public::from_ss58check_with_version(address) {
             Ok((_addr, version)) => match coin.coin.as_str() {
-                "KUSAMA" => version == Ss58AddressFormat::KusamaAccount,
-                "POLKADOT" => version == Ss58AddressFormat::PolkadotAccount,
+                "KUSAMA" => version == Ss58AddressFormatRegistry::KusamaAccount.into(),
+                "POLKADOT" => version == Ss58AddressFormatRegistry::PolkadotAccount.into(),
                 _ => false,
             },
             Err(_) => false,

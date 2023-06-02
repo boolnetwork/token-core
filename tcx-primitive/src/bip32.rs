@@ -42,7 +42,8 @@ impl Bip32DeterministicPrivateKey {
     }
 
     pub fn from_mnemonic(mnemonic: &str) -> Result<Self> {
-        let mn = Mnemonic::from_phrase(mnemonic, Language::English)?;
+        let mn = Mnemonic::from_phrase(mnemonic, Language::English)
+            .map_err(|_| failure::err_msg("invalid mnemonic"))?;
         let seed = bip39::Seed::new(&mn, "");
         let epk = ExtendedPrivKey::new_master(Network::Bitcoin, seed.as_ref())?;
         Ok(Bip32DeterministicPrivateKey(epk))
@@ -95,7 +96,8 @@ impl DeterministicPrivateKey for Bip32DeterministicPrivateKey {
     }
 
     fn from_mnemonic(mnemonic: &str) -> Result<Self> {
-        let mn = Mnemonic::from_phrase(mnemonic, Language::English)?;
+        let mn = Mnemonic::from_phrase(mnemonic, Language::English)
+            .map_err(|_| failure::err_msg("invalid mnemonic"))?;
         let seed = bip39::Seed::new(&mn, "");
         let esk = ExtendedPrivKey::new_master(Network::Bitcoin, seed.as_bytes())?;
 

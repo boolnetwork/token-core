@@ -3,7 +3,8 @@ use crate::{FromHex, Result, ToHex};
 use schnorrkel::SecretKey;
 
 use sp_core::sr25519::{Pair, Public};
-use sp_core::{Pair as TraitPair, Public as TraitPublic};
+use sp_core::ByteArray;
+use sp_core::Pair as TraitPair;
 
 //use sp_core::crypto::Ss58Codec;
 
@@ -63,7 +64,9 @@ impl std::fmt::Display for Sr25519PublicKey {
 
 impl TraitPublicKey for Sr25519PublicKey {
     fn from_slice(data: &[u8]) -> Result<Self> {
-        Ok(Sr25519PublicKey(Public::from_slice(data)))
+        Ok(Sr25519PublicKey(
+            Public::from_slice(data).map_err(|_| failure::err_msg("invalid public key"))?,
+        ))
     }
 
     fn to_bytes(&self) -> Vec<u8> {

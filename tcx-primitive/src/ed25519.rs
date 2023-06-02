@@ -1,7 +1,8 @@
 use crate::ecc::{KeyError, PrivateKey as TraitPrivateKey, PublicKey as TraitPublicKey};
 use crate::{FromHex, Result, ToHex};
 use sp_core::ed25519::{Pair, Public};
-use sp_core::{Pair as TraitPair, Public as TraitPublic};
+use sp_core::ByteArray;
+use sp_core::Pair as TraitPair;
 
 #[derive(Clone)]
 pub struct Ed25519PublicKey(pub Public);
@@ -57,7 +58,9 @@ impl std::fmt::Display for Ed25519PublicKey {
 
 impl TraitPublicKey for Ed25519PublicKey {
     fn from_slice(data: &[u8]) -> Result<Self> {
-        Ok(Ed25519PublicKey(Public::from_slice(data)))
+        Ok(Ed25519PublicKey(
+            Public::from_slice(data).map_err(|_| KeyError::InvalidEd25519Key)?,
+        ))
     }
 
     fn to_bytes(&self) -> Vec<u8> {
