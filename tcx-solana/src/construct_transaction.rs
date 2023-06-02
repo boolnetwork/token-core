@@ -458,23 +458,23 @@ pub fn message_from_instructions(
     writable_signer_keys.extend(
         key_meta_map
             .iter()
-            .filter(|(key, meta)| meta.is_signer && meta.is_writable)
+            .filter(|(_key, meta)| meta.is_signer && meta.is_writable)
             .map(|(key, _)| (*key).clone())
             .collect::<Vec<Pubkey>>(),
     );
     let readonly_signer_keys = key_meta_map
         .iter()
-        .filter(|(key, meta)| meta.is_signer && !meta.is_writable)
+        .filter(|(_key, meta)| meta.is_signer && !meta.is_writable)
         .map(|(key, _)| (*key).clone())
         .collect::<Vec<Pubkey>>();
     let writable_non_signer_keys = key_meta_map
         .iter()
-        .filter(|(key, meta)| !meta.is_signer && meta.is_writable)
+        .filter(|(_key, meta)| !meta.is_signer && meta.is_writable)
         .map(|(key, _)| (*key).clone())
         .collect::<Vec<Pubkey>>();
     let readonly_non_signer_keys = key_meta_map
         .iter()
-        .filter(|(key, meta)| !meta.is_signer && !meta.is_writable)
+        .filter(|(_key, meta)| !meta.is_signer && !meta.is_writable)
         .map(|(key, _)| (*key).clone())
         .collect::<Vec<Pubkey>>();
     let num_required_signatures: u8 =

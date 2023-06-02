@@ -1,13 +1,14 @@
+use std::str::FromStr;
+
 use tcx_chain::{Address, Result};
 use tcx_constants::CoinInfo;
 use tcx_primitive::{PublicKey, TypedPublicKey};
 
-use forest_address::Address as ForestAddress;
+use forest_shim::address::Address as ForestAddress;
 
 use super::Error;
 use crate::utils::{digest, HashSize};
 use base32::Alphabet;
-use std::str::FromStr;
 
 const MAINNET_PREFIX: &'static str = "f";
 const TESTNET_PREFIX: &'static str = "t";
@@ -79,8 +80,7 @@ impl Address for FilecoinAddress {
         if !address.starts_with(ntwk) {
             return false;
         }
-        true
-        // ForestAddress::from_str(address).is_ok()
+        ForestAddress::from_str(address).is_ok()
     }
 }
 

@@ -1,12 +1,12 @@
 use crate::transaction::{Signature, SignedMessage, UnsignedMessage};
 use crate::utils::{digest, HashSize};
 use crate::Error;
-use forest_address::Address;
-use forest_cid::Cid;
-use forest_encoding::Cbor;
-use forest_message::UnsignedMessage as ForestUnsignedMessage;
-use forest_vm::Serialized;
-use num_bigint_chainsafe::BigInt;
+use forest_message::SignedMessage as ForestSignedMessage;
+use forest_shim::address::Address;
+use forest_shim::econ::TokenAmount;
+use forest_shim::message::{Message as ForestUnsignedMessage, Message_v3};
+use fvm_ipld_encoding::Cbor;
+use num_bigint::BigInt;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use tcx_chain::{ChainSigner, Keystore, Result, TransactionSigner};
@@ -29,22 +29,21 @@ impl TryFrom<&UnsignedMessage> for ForestUnsignedMessage {
 
         let message_params_bytes =
             base64::decode(&message.params).map_err(|_| Error::InvalidParam)?;
-        let params = Serialized::new(message_params_bytes);
+        let params = message_params_bytes.into();
 
-        let tmp = ForestUnsignedMessage::builder()
-            .to(to)
-            .from(from)
-            .sequence(message.nonce)
-            .value(value)
-            .method_num(message.method)
-            .params(params)
-            .gas_limit(gas_limit)
-            .gas_premium(gas_premium)
-            .gas_fee_cap(gas_fee_cap)
-            .build()
-            .map_err(|_| Error::InvalidFormat)?;
-
-        Ok(tmp)
+        let tmp = Message_v3 {
+            version: 0,
+            from: from.into(),
+            to: to.into(),
+            sequence: message.nonce,
+            value: TokenAmount::from_atto(value).into(),
+            method_num: message.method,
+            params,
+            gas_limit: gas_limit as u64,
+            gas_fee_cap: TokenAmount::from_atto(gas_fee_cap).into(),
+            gas_premium: TokenAmount::from_atto(gas_premium).into(),
+        };
+        Ok(tmp.into())
     }
 }
 
@@ -55,7 +54,7 @@ impl TransactionSigner<UnsignedMessage, SignedMessage> for Keystore {
         address: &str,
         tx: &UnsignedMessage,
     ) -> Result<SignedMessage> {
-        let unsigned_message = forest_message::UnsignedMessage::try_from(tx)?;
+        let unsigned_message = forest_shim::message::Message::try_from(tx)?;
 
         let account = self.account(symbol, address);
         let signature_type;
@@ -65,7 +64,7 @@ impl TransactionSigner<UnsignedMessage, SignedMessage> for Keystore {
         }
 
         let signature;
-        let mut cid: Cid = unsigned_message.cid()?;
+        let mut cid = unsigned_message.cid()?;
         match account.unwrap().curve {
             CurveType::SECP256k1 => {
                 signature_type = 1;
@@ -76,8 +75,8 @@ impl TransactionSigner<UnsignedMessage, SignedMessage> for Keystore {
                     None,
                 )?;
 
-                let forest_sig = forest_crypto::Signature::new_secp256k1(signature.clone());
-                let forest_signed_msg = forest_message::SignedMessage {
+                let forest_sig = forest_shim::crypto::Signature::new_secp256k1(signature.clone());
+                let forest_signed_msg = ForestSignedMessage {
                     message: unsigned_message,
                     signature: forest_sig,
                 };
