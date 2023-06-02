@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     pub fn new_keystore() {
-        let keystore = HdKeystore::new(TEST_PASSWORD, Metadata::default());
+        let keystore = HdKeystore::new(TEST_PASSWORD, Metadata::default(), "");
         let store = keystore.store;
 
         assert_eq!(store.version, 11000);

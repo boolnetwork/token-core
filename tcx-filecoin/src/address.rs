@@ -87,12 +87,14 @@ impl Address for FilecoinAddress {
 #[cfg(test)]
 mod tests {
     use crate::address::FilecoinAddress;
+    use forest_shim::address::set_current_network;
     use tcx_chain::{Address, Keystore, Metadata};
     use tcx_constants::{coin_info_from_param, CoinInfo, CurveType};
     use tcx_primitive::TypedPublicKey;
 
     #[test]
     fn test_is_valid() {
+        set_current_network(forest_shim::address::Network::Testnet);
         let coin_info = coin_info_from_param("FILECOIN", "TESTNET", "", "").unwrap();
         assert_eq!(
             FilecoinAddress::is_valid("t12i3bop43tprlnymx2c75u6uvlq7iur2rcd7qsey", &coin_info),
@@ -102,6 +104,7 @@ mod tests {
         assert_eq!(FilecoinAddress::is_valid("t3rynpyphoo6pxfzb4ljy3zmf224vjihlok4oewbpjii3uq2mgl7jgrpxsiddaowsxccnnbi2p4ei4sdmsxfaq",&coin_info), true);
         assert_eq!(FilecoinAddress::is_valid("t3rynpyphoo6pxfzb4ljy3zmf224vjihlok4oewbpjii3uq2mgl7jgrpxsiddaowsxccnnbi2p4ei4sdmsxfaqt",&coin_info), false);
 
+        set_current_network(forest_shim::address::Network::Mainnet);
         let coin_info = coin_info_from_param("FILECOIN", "MAINNET", "", "").unwrap();
         assert_eq!(
             FilecoinAddress::is_valid("t12i3bop43tprlnymx2c75u6uvlq7iur2rcd7qsey", &coin_info),
@@ -109,6 +112,10 @@ mod tests {
         );
         assert_eq!(FilecoinAddress::is_valid("t3qdyntx5snnwgmjkp2ztd6tf6hhcmurxfj53zylrqyympwvzvbznx6vnvdqloate5eviphnzrkupno4wheesa",&coin_info), false);
         assert_eq!(FilecoinAddress::is_valid("t3rynpyphoo6pxfzb4ljy3zmf224vjihlok4oewbpjii3uq2mgl7jgrpxsiddaowsxccnnbi2p4ei4sdmsxfaq",&coin_info), false);
+        assert_eq!(
+            FilecoinAddress::is_valid("f410fzilvzgqqn6mjly7my7bjmr75igvu4xw7pujnqji", &coin_info),
+            true
+        );
     }
 
     #[test]
