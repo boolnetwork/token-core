@@ -90,6 +90,11 @@ lazy_static! {
             chain_id: 3141,
         });
         chain_infos.push(ChainInfo {
+            network: "FILECOIN_CALIBRATION_EVM".to_string(),
+            network_id: 314159,
+            chain_id: 314159,
+        });
+        chain_infos.push(ChainInfo {
             network: "OPTIMISM".to_string(),
             network_id: 10,
             chain_id: 10,
