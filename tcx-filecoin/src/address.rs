@@ -79,8 +79,8 @@ impl Address for FilecoinAddress {
         if !address.starts_with(ntwk) {
             return false;
         }
-        true
-        // ForestAddress::from_str(address).is_ok()
+        // true
+        ForestAddress::from_str(address).is_ok()
     }
 }
 
@@ -101,6 +101,9 @@ mod tests {
         assert_eq!(FilecoinAddress::is_valid("t3qdyntx5snnwgmjkp2ztd6tf6hhcmurxfj53zylrqyympwvzvbznx6vnvdqloate5eviphnzrkupno4wheesa",&coin_info), true);
         assert_eq!(FilecoinAddress::is_valid("t3rynpyphoo6pxfzb4ljy3zmf224vjihlok4oewbpjii3uq2mgl7jgrpxsiddaowsxccnnbi2p4ei4sdmsxfaq",&coin_info), true);
         assert_eq!(FilecoinAddress::is_valid("t3rynpyphoo6pxfzb4ljy3zmf224vjihlok4oewbpjii3uq2mgl7jgrpxsiddaowsxccnnbi2p4ei4sdmsxfaqt",&coin_info), false);
+
+        assert_eq!(FilecoinAddress::is_valid("t410fppfpo5fxb2jkczqxzcsaula6wzo7kuwpw4tj6fq",&coin_info), true);
+        assert_eq!(FilecoinAddress::is_valid("t410fppfpo5fxb2jkczqxzcsaula6wzo7kuwpw4tj6ff",&coin_info), false);
 
         let coin_info = coin_info_from_param("FILECOIN", "MAINNET", "", "").unwrap();
         assert_eq!(
