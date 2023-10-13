@@ -35,3 +35,9 @@ forest_address = "0.3.0"
 forest_encoding = "0.2.0"
 forest_cid = "0.3.0"
 forest_crypto = "0.4.0"
+
+#[patch.crates-io]
+#forest_address = { path = "../forest/vm/address" }
+
+[patch.crates-io]
+forest_address = { git = "https://github.com/boolnetwork/forest.git", branch = "token-core" }

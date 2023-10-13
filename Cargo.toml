@@ -21,3 +21,8 @@ members = [
     "tcx-starknet",
 ]
 
+#[patch.crates-io]
+#forest_address = { path = "../forest/vm/address" }
+
+[patch.crates-io]
+forest_address = { git = "https://github.com/boolnetwork/forest.git", branch = "token-core" }
