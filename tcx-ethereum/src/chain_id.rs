@@ -105,6 +105,26 @@ lazy_static! {
             chain_id: 420,
         });
         chain_infos.push(ChainInfo {
+            network: "BASE".to_string(),
+            network_id: 8453,
+            chain_id: 8453,
+        });
+        chain_infos.push(ChainInfo {
+            network: "BASE_GOERLI".to_string(),
+            network_id: 84531,
+            chain_id: 84531,
+        });
+        chain_infos.push(ChainInfo {
+            network: "LINEA".to_string(),
+            network_id: 59144,
+            chain_id: 59144,
+        });
+        chain_infos.push(ChainInfo {
+            network: "LINEA_TESTNET".to_string(),
+            network_id: 59140,
+            chain_id: 59140,
+        });
+        chain_infos.push(ChainInfo {
             network: "ARBITRUM".to_string(),
             network_id: 42161,
             chain_id: 42161,
