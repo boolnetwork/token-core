@@ -2,11 +2,12 @@ mod address;
 mod chain_id;
 pub mod signature;
 mod signer;
-mod transactions;
+pub mod transaction;
+pub mod types;
 
 pub use crate::address::EthereumAddress;
 pub use crate::chain_id::{chain_id_from_network, ChainInfo};
-pub use crate::transactions::{EthereumMsgIn, EthereumMsgOut, EthereumTxIn, EthereumTxOut};
+pub use crate::transaction::{EthereumMsgIn, EthereumMsgOut, EthereumTxIn, EthereumTxOut};
 use digest::Digest;
 
 #[macro_use]

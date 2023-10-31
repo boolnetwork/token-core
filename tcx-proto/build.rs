@@ -63,4 +63,8 @@ fn main() {
     // tcx-starknet
     env::set_var("OUT_DIR", "../tcx-starknet/src");
     prost_build::compile_protos(&["src/starknet.proto"], &["src/"]).unwrap();
+
+    // tcx-cita
+    env::set_var("OUT_DIR", "../tcx-cita/src");
+    prost_build::compile_protos(&["src/cita.proto"], &["src/"]).unwrap();
 }

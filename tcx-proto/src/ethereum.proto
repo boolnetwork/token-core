@@ -9,6 +9,9 @@ message EthereumTxIn {
   string gas = 5;
   string data = 6;
   string network = 7;
+  string access_list = 8;
+  string max_priority_fee_per_gas = 9;
+  string transaction_type = 10;
 }
 
 message EthereumTxOut {
