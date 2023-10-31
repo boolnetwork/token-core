@@ -682,7 +682,7 @@ mod tests {
 
     #[test]
     fn test_create() {
-        let hd_store = HdKeystore::new(TEST_PASSWORD, Metadata::default());
+        let hd_store = HdKeystore::new(TEST_PASSWORD, Metadata::default(), "");
         let keystore = Hd(hd_store);
         assert_eq!(0, keystore.accounts().len());
         assert!(keystore.determinable());

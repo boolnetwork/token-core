@@ -39,7 +39,7 @@ mod tests {
         let mut meta = Metadata::default();
         meta.name = "CreateTest".to_string();
 
-        let mut keystore = Keystore::Hd(HdKeystore::new(TEST_PASSWORD, meta));
+        let mut keystore = Keystore::Hd(HdKeystore::new(TEST_PASSWORD, meta, ""));
 
         let bch_coin = CoinInfo {
             coin: "BITCOINCASH".to_string(),

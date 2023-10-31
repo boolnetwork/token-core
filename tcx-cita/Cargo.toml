@@ -1,0 +1,19 @@
+[package]
+name = "tcx-cita"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tcx-chain = { path = "../tcx-chain" }
+tcx-primitive = { path = "../tcx-primitive" }
+tcx-constants = { path = "../tcx-constants" }
+tcx-crypto = { path = "../tcx-crypto" }
+
+hex = "0.3.1"
+prost = "0.6.1"
+failure = "0.1.5"
+sha3 = "0.8.2"
+
+[dev-dependencies]
+protobuf = { version = "=2.8.1", features = ["with-bytes"]}
+libproto = { git = "https://github.com/citahub/cita-common.git", branch = "develop", features = ["sha3hash","secp256k1"] }

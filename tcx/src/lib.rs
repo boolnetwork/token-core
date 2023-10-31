@@ -187,6 +187,9 @@ mod tests {
     use sp_runtime::traits::Verify;
     use tcx_aptos::{AptosTxIn, AptosTxOut, AptosTxType};
     use tcx_btc_fork::BtcForkSignedTxOutput;
+    use tcx_cita::transaction::{
+        SignedTransaction as CitaSignedTransaction, Transaction as CitaTransaction,
+    };
     use tcx_ckb::{CachedCell, CellInput, CkbTxInput, CkbTxOutput, OutPoint, Script, Witness};
     use tcx_ethereum::{EthereumTxIn, EthereumTxOut};
     use tcx_filecoin::{SignedMessage, UnsignedMessage};
@@ -3353,6 +3356,61 @@ mod tests {
             let ret = call_api("sign_tx", tx).unwrap();
             let output: StarknetTxOut = StarknetTxOut::decode(ret.as_slice()).unwrap();
             assert_eq!(output.signature, "02900d61c17093c18f01a874a1acf4ff1b7d648562cd03aa816efd30d8b96fbd07f73855bafd4996445956f58ae09f72fd17b5ea5107d41f8c8613deb93f355f".to_string());
+
+            remove_created_wallet(&wallet.id);
+        })
+    }
+
+    #[test]
+    pub fn test_sign_cita_tx() {
+        run_test(|| {
+            let derivation = Derivation {
+                chain_type: "MTT".to_string(),
+                path: "m/44'/60'/0'/0/0".to_string(),
+                network: "CITA".to_string(),
+                seg_wit: "".to_string(),
+                chain_id: "1".to_string(),
+                curve: "".to_string(),
+            };
+
+            let wallet = import_and_derive(derivation);
+
+            let input = CitaTransaction {
+                nonce: "0".to_string(),
+                quota: 0,
+                to: "132D1eA7EF895b6834D25911656a434d7167091C".to_string(),
+                value: 0u32.to_be_bytes().to_vec(),
+                chain_id: 1,
+                version: 0,
+                to_v1: vec![],
+                data: "7f7465737432000000000000000000000000000000000000000000000000000000600057"
+                    .as_bytes()
+                    .to_vec(),
+                valid_until_block: 1000,
+                chain_id_v1: vec![],
+            };
+
+            let tx = SignParam {
+                id: wallet.id.to_string(),
+                key: Some(Key::Password(TEST_PASSWORD.to_string())),
+                chain_type: "MTT".to_string(),
+                address: wallet.accounts.first().unwrap().address.to_string(),
+                input: Some(::prost_types::Any {
+                    type_url: "imtoken".to_string(),
+                    value: encode_message(input).unwrap(),
+                }),
+            };
+
+            let ret = call_api("sign_tx", tx).unwrap();
+            assert_eq!(hex::encode(&ret), "0ac8010a82010a283133324431654137454638393562363833344432353931313635366134333464373136373039314312013020e8072a483766373436353733373433323030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303630303035373204000000003801124111b70f4159ab2eed0fa17f45469de56e12541dbf6e120352fc64d33394f2f72d6e2c1834784a85231f10d219fb5a2db9ae7f99f5386d063fdfecaa6cbef69938011220ab1b9b18c63651b3b306f40bb47183868ebe1f835482daaa2ee336ecefcc20071a4080c98b8ea7cab630defb0c09a4295c2193cdee016c1d5b9b0cb18572b9c370fefbc790fc3291d3cb6441ac94c3952035c409f4374d1780f400c1ed92972ce83c");
+
+            let _output: CitaSignedTransaction =
+                CitaSignedTransaction::decode(ret.as_slice()).unwrap();
+            assert_eq!(
+                hex::encode(_output.tx_hash),
+                "ab1b9b18c63651b3b306f40bb47183868ebe1f835482daaa2ee336ecefcc2007"
+            );
+            assert_eq!(hex::encode(_output.signer), "80c98b8ea7cab630defb0c09a4295c2193cdee016c1d5b9b0cb18572b9c370fefbc790fc3291d3cb6441ac94c3952035c409f4374d1780f400c1ed92972ce83c");
 
             remove_created_wallet(&wallet.id);
         })

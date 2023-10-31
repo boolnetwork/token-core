@@ -1,6 +1,6 @@
 use crate::keccak;
-use crate::transactions::transaction::Transaction;
-use crate::transactions::{EthereumMsgIn, EthereumMsgOut, EthereumTxIn, EthereumTxOut};
+use crate::transaction::{EthereumMsgIn, EthereumMsgOut, EthereumTxIn, EthereumTxOut};
+use crate::types::Transaction;
 use crate::{chain_id_from_network, Error};
 use core::convert::TryFrom;
 use ethereum_types::{H160, H256, U256, U64};

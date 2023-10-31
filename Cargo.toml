@@ -19,6 +19,7 @@ members = [
     "tcx-aptos",
     "tcx-sui",
     "tcx-starknet",
+    "tcx-cita",
 ]
 
 #[patch.crates-io]

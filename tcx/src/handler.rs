@@ -16,6 +16,7 @@ use tcx_btc_fork::{
 };
 use tcx_chain::{key_hash_from_mnemonic, key_hash_from_private_key, Keystore, KeystoreGuard};
 use tcx_chain::{Account, HdKeystore, Metadata, PrivateKeystore, Source};
+use tcx_cita::{CitaAddress, Transaction as CitaTransactionIn};
 use tcx_ckb::{CkbAddress, CkbTxInput};
 use tcx_crypto::{XPUB_COMMON_IV, XPUB_COMMON_KEY_128};
 use tcx_filecoin::{FilecoinAddress, KeyInfo, UnsignedMessage};
@@ -90,6 +91,7 @@ fn derive_account<'a, 'b>(keystore: &mut Keystore, derivation: &Derivation) -> R
         "APTOS" => keystore.derive_coin::<AptosAddress>(&coin_info),
         "SUI" => keystore.derive_coin::<SuiAddress>(&coin_info),
         "STARKNET" => keystore.derive_coin::<StarknetAddress>(&coin_info),
+        "MTT" => keystore.derive_coin::<CitaAddress>(&coin_info),
         _ => Err(format_err!("derive_account unsupported_chain")),
     }
 }
@@ -666,6 +668,7 @@ pub fn sign_tx(data: &[u8]) -> Result<Vec<u8>> {
         "APTOS" => sign_aptos_tx(&param, guard.keystore_mut()),
         "SUI" => sign_sui_tx(&param, guard.keystore_mut()),
         "STARKNET" => sign_starknet_tx(&param, guard.keystore_mut()),
+        "MTT" => sign_cita_tx_raw(&param, guard.keystore_mut()),
         _ => Err(format_err!("sign_tx unsupported_chain")),
     }
 }
@@ -1048,6 +1051,21 @@ pub fn sign_starknet_tx(param: &SignParam, keystore: &mut Keystore) -> Result<Ve
             .as_slice(),
     )
     .expect("SuiTxInput");
+    let signed_tx = keystore.sign_transaction(&param.chain_type, &param.address, &input)?;
+    encode_message(signed_tx)
+}
+
+pub fn sign_cita_tx_raw(param: &SignParam, keystore: &mut Keystore) -> Result<Vec<u8>> {
+    let input: CitaTransactionIn = CitaTransactionIn::decode(
+        param
+            .input
+            .as_ref()
+            .expect("raw_tx_input")
+            .value
+            .clone()
+            .as_slice(),
+    )
+    .expect("CitaTransactionIn");
     let signed_tx = keystore.sign_transaction(&param.chain_type, &param.address, &input)?;
     encode_message(signed_tx)
 }
