@@ -10,7 +10,7 @@ impl Address for CitaAddress {
         let pk = public_key.as_secp256k1()?.to_uncompressed();
         let hash = sha3::Keccak256::digest(&pk[1..]).to_vec().split_off(12);
         let address = hex::encode(hash);
-        Ok("0x".to_string() + &hex::encode::<&[u8]>(address.as_ref()))
+        Ok("0x".to_string() + &address)
     }
 
     fn is_valid(address: &str, _coin: &CoinInfo) -> bool {
