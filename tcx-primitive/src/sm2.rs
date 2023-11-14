@@ -4,10 +4,10 @@ use crate::{FromHex, Result, ToHex};
 use cita_crypto_trait::{CreateKey, Sign};
 use cita_sm2::{KeyPair, Message, PrivKey, PubKey, Signature};
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct Sm2PublicKey(pub PubKey);
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct Sm2PrivateKey(pub PrivKey);
 
 impl From<PubKey> for Sm2PublicKey {

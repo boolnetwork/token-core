@@ -3364,7 +3364,7 @@ mod tests {
     #[test]
     pub fn test_sign_cita_tx() {
         run_test(|| {
-            let wallet = import_default_pk_store();
+            let wallet = import_default_wallet();
             let derivation = Derivation {
                 chain_type: "MTT".to_string(),
                 path: "m/44'/60'/0'/0/0".to_string(),

@@ -5775,6 +5775,7 @@ dependencies = [
  "hkdf 0.9.0",
  "iop-keyvault",
  "lazy_static",
+ "libsm",
  "num-bigint 0.2.6",
  "num-traits",
  "regex",

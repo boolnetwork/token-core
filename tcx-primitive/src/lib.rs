@@ -12,6 +12,7 @@ mod ed25519_bip32;
 mod rand;
 mod secp256k1;
 mod sm2;
+mod sm2_bip32;
 mod sr25519;
 mod starknet_curve;
 mod subkey;
@@ -32,6 +33,8 @@ pub use crate::rand::generate_mnemonic;
 pub use crate::secp256k1::{
     private_key_without_version, verify_private_key, Secp256k1PrivateKey, Secp256k1PublicKey,
 };
+pub use crate::sm2::{Sm2PrivateKey, Sm2PublicKey};
+pub use crate::sm2_bip32::{Bip32Sm2DeterministicPrivateKey, Bip32Sm2DeterministicPublicKey};
 pub use crate::sr25519::{Sr25519PrivateKey, Sr25519PublicKey};
 pub use crate::starknet_curve::{StarknetPrivateKey, StarknetPublicKey};
 

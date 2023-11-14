@@ -1,7 +1,8 @@
 use super::Result;
 use crate::{
-    Bip32DeterministicPrivateKey, Bip32DeterministicPublicKey, Derive, FromHex,
-    Secp256k1PrivateKey, Secp256k1PublicKey, StarknetPrivateKey, ToHex,
+    Bip32DeterministicPrivateKey, Bip32DeterministicPublicKey, Bip32Sm2DeterministicPrivateKey,
+    Bip32Sm2DeterministicPublicKey, Derive, FromHex, Secp256k1PrivateKey, Secp256k1PublicKey,
+    StarknetPrivateKey, ToHex,
 };
 
 use crate::bls::{BLSPrivateKey, BLSPublicKey};
@@ -260,6 +261,7 @@ pub enum TypedDeterministicPublicKey {
     Bip32Sepc256k1(Bip32DeterministicPublicKey),
     SubSr25519(Sr25519PublicKey), //    SubstrateSr25519()
     Bip32Ed25519(Ed25519DeterministicPublicKey),
+    Bip32Sm2(Bip32Sm2DeterministicPublicKey),
 }
 
 impl TypedDeterministicPublicKey {
@@ -268,6 +270,7 @@ impl TypedDeterministicPublicKey {
             TypedDeterministicPublicKey::Bip32Sepc256k1(_) => CurveType::SECP256k1,
             TypedDeterministicPublicKey::SubSr25519(_) => CurveType::SubSr25519,
             TypedDeterministicPublicKey::Bip32Ed25519(_) => CurveType::ED25519,
+            TypedDeterministicPublicKey::Bip32Sm2(_) => CurveType::Sm2,
         }
     }
 
@@ -282,6 +285,7 @@ impl TypedDeterministicPublicKey {
             TypedDeterministicPublicKey::Bip32Ed25519(epk) => {
                 TypedPublicKey::Ed25519(epk.public_key())
             }
+            TypedDeterministicPublicKey::Bip32Sm2(epk) => TypedPublicKey::Sm2(epk.public_key()),
         }
     }
 }
@@ -292,6 +296,7 @@ impl ToString for TypedDeterministicPublicKey {
             TypedDeterministicPublicKey::Bip32Sepc256k1(epk) => epk.to_string(),
             TypedDeterministicPublicKey::SubSr25519(epk) => epk.to_string(),
             TypedDeterministicPublicKey::Bip32Ed25519(epk) => epk.to_string(),
+            TypedDeterministicPublicKey::Bip32Sm2(epk) => epk.to_string(),
         }
     }
 }
@@ -308,6 +313,9 @@ impl Derive for TypedDeterministicPublicKey {
             TypedDeterministicPublicKey::Bip32Ed25519(epk) => {
                 Ok(TypedDeterministicPublicKey::Bip32Ed25519(epk.derive(path)?))
             }
+            TypedDeterministicPublicKey::Bip32Sm2(epk) => {
+                Ok(TypedDeterministicPublicKey::Bip32Sm2(epk.derive(path)?))
+            }
         }
     }
 }
@@ -317,6 +325,7 @@ pub enum TypedDeterministicPrivateKey {
     SubSr25519(Sr25519PrivateKey),
     Bip32Ed25519(Ed25519DeterministicPrivateKey),
     BLS(BLSDeterministicPrivateKey),
+    Bip32Sm2(Bip32Sm2DeterministicPrivateKey),
 }
 
 impl TypedDeterministicPrivateKey {
@@ -326,6 +335,7 @@ impl TypedDeterministicPrivateKey {
             TypedDeterministicPrivateKey::SubSr25519(_) => CurveType::SubSr25519,
             TypedDeterministicPrivateKey::Bip32Ed25519(_) => CurveType::ED25519,
             TypedDeterministicPrivateKey::BLS(_) => CurveType::BLS,
+            TypedDeterministicPrivateKey::Bip32Sm2(_) => CurveType::Sm2,
         }
     }
 
@@ -344,6 +354,9 @@ impl TypedDeterministicPrivateKey {
             CurveType::BLS => Ok(TypedDeterministicPrivateKey::BLS(
                 BLSDeterministicPrivateKey::from_mnemonic(mnemonic)?,
             )),
+            CurveType::Sm2 => Ok(TypedDeterministicPrivateKey::Bip32Sm2(
+                Bip32Sm2DeterministicPrivateKey::from_mnemonic(mnemonic)?,
+            )),
             _ => Err(KeyError::InvalidCurveType.into()),
         }
     }
@@ -360,6 +373,7 @@ impl TypedDeterministicPrivateKey {
                 TypedPrivateKey::Ed25519(dsk.private_key())
             }
             TypedDeterministicPrivateKey::BLS(dsk) => TypedPrivateKey::BLS(dsk.private_key()),
+            TypedDeterministicPrivateKey::Bip32Sm2(dsk) => TypedPrivateKey::Sm2(dsk.private_key()),
         }
     }
 
@@ -374,6 +388,9 @@ impl TypedDeterministicPrivateKey {
             TypedDeterministicPrivateKey::Bip32Ed25519(sk) => {
                 TypedDeterministicPublicKey::Bip32Ed25519(sk.deterministic_public_key())
             }
+            TypedDeterministicPrivateKey::Bip32Sm2(sk) => {
+                TypedDeterministicPublicKey::Bip32Sm2(sk.deterministic_public_key())
+            }
             TypedDeterministicPrivateKey::BLS(_) => panic!("not support"),
         }
     }
@@ -386,6 +403,7 @@ impl ToString for TypedDeterministicPrivateKey {
             TypedDeterministicPrivateKey::SubSr25519(sk) => hex::encode(sk.0.to_raw_vec()),
             TypedDeterministicPrivateKey::Bip32Ed25519(sk) => sk.to_string(),
             TypedDeterministicPrivateKey::BLS(sk) => hex::encode(sk.0.to_string()),
+            TypedDeterministicPrivateKey::Bip32Sm2(sk) => hex::encode(sk.private_key().to_bytes()),
         }
     }
 }
@@ -402,6 +420,9 @@ impl TypedDeterministicPublicKey {
             CurveType::ED25519 => Ok(TypedDeterministicPublicKey::Bip32Ed25519(
                 Ed25519DeterministicPublicKey::from_hex(hex)?,
             )),
+            CurveType::Sm2 => Ok(TypedDeterministicPublicKey::Bip32Sm2(
+                Bip32Sm2DeterministicPublicKey::from_hex(hex)?,
+            )),
             _ => Err(KeyError::InvalidCurveType.into()),
         }
     }
@@ -413,6 +434,7 @@ impl ToHex for TypedDeterministicPublicKey {
             TypedDeterministicPublicKey::Bip32Sepc256k1(epk) => epk.to_hex(),
             TypedDeterministicPublicKey::SubSr25519(epk) => epk.to_hex(),
             TypedDeterministicPublicKey::Bip32Ed25519(epk) => epk.to_hex(),
+            TypedDeterministicPublicKey::Bip32Sm2(epk) => epk.to_hex(),
         }
     }
 }
@@ -431,6 +453,9 @@ impl Derive for TypedDeterministicPrivateKey {
             ),
             TypedDeterministicPrivateKey::BLS(dsk) => {
                 Ok(TypedDeterministicPrivateKey::BLS(dsk.derive(path)?))
+            }
+            TypedDeterministicPrivateKey::Bip32Sm2(dsk) => {
+                Ok(TypedDeterministicPrivateKey::Bip32Sm2(dsk.derive(path)?))
             }
         }
     }
