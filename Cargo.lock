@@ -377,6 +377,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bit-vec"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02b4ff8b16e6076c3e14220b39fbc1fabb6737522281a388998046859400895f"
+
+[[package]]
 name = "bitcoin"
 version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -384,7 +390,7 @@ checksum = "aefc9be9f17185f4ebccae6575d342063f775924d57df0000edb1880c0fb7095"
 dependencies = [
  "bech32 0.7.3",
  "bitcoin_hashes",
- "secp256k1 0.19.0",
+ "secp256k1",
 ]
 
 [[package]]
@@ -807,7 +813,7 @@ version = "0.1.0"
 source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
 dependencies = [
  "cita-crypto-trait",
- "cita-secp256k1",
+ "cita-sm2",
 ]
 
 [[package]]
@@ -844,18 +850,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "cita-secp256k1"
-version = "0.6.0"
+name = "cita-sm2"
+version = "0.1.0"
 source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
 dependencies = [
  "cita-crypto-trait",
  "cita-types",
  "hashable",
- "lazy_static",
- "rand 0.6.5",
+ "libsm",
  "rlp 0.2.0",
  "rustc-serialize",
- "secp256k1 0.15.3",
  "serde",
 ]
 
@@ -2084,7 +2088,7 @@ version = "0.1.0"
 source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
 dependencies = [
  "cita-types",
- "tiny-keccak 1.5.0",
+ "libsm",
 ]
 
 [[package]]
@@ -2707,6 +2711,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsm"
+version = "0.3.0"
+source = "git+https://github.com/citahub/libsm?rev=4d0e6199fca0934c58131de1d0036e9aa4da26c1#4d0e6199fca0934c58131de1d0036e9aa4da26c1"
+dependencies = [
+ "byteorder 1.4.3",
+ "lazy_static",
+ "num-bigint 0.1.44",
+ "num-integer",
+ "num-traits",
+ "rand 0.4.6",
+ "yasna",
+]
+
+[[package]]
 name = "link-cplusplus"
 version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3012,6 +3030,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61807f77802ff30975e01f4f071c8ba10c022052f98b3294119f3e615d13e5be"
 
 [[package]]
+name = "num"
+version = "0.1.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4703ad64153382334aa8db57c637364c322d3372e097840c72000dabdcf6156e"
+dependencies = [
+ "num-bigint 0.1.44",
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational 0.1.42",
+ "num-traits",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e63899ad0da84ce718c14936262a41cee2c79c981fc0a0e7c7beb47d5a07e8c1"
+dependencies = [
+ "num-integer",
+ "num-traits",
+ "rand 0.3.23",
+ "rustc-serialize",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3045,6 +3089,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-complex"
+version = "0.1.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b288631d7878aaf59442cffd36910ea604ecd7745c36054328595114001c9656"
+dependencies = [
+ "num-traits",
+ "rustc-serialize",
+]
+
+[[package]]
 name = "num-derive"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3063,6 +3117,29 @@ checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
 dependencies = [
  "autocfg 1.0.1",
  "num-traits",
+]
+
+[[package]]
+name = "num-iter"
+version = "0.1.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d03e6c028c5dc5cac6e2dec0efda81fc887605bb3d884578bb6d6bf7514e252"
+dependencies = [
+ "autocfg 1.0.1",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.1.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee314c74bd753fc86b4780aa9475da469155f3848473a261d2d18e35245a784e"
+dependencies = [
+ "num-bigint 0.1.44",
+ "num-integer",
+ "num-traits",
+ "rustc-serialize",
 ]
 
 [[package]]
@@ -4377,16 +4454,6 @@ dependencies = [
 
 [[package]]
 name = "secp256k1"
-version = "0.15.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5618cd39d19d7a3964dde3bd1cc940c58097538ca42b6c3ea1cd66634d39652"
-dependencies = [
- "cc",
- "rand 0.6.5",
-]
-
-[[package]]
-name = "secp256k1"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c6179428c22c73ac0fbb7b5579a56353ce78ba29759b3b8575183336ea74cdfb"
@@ -5500,7 +5567,7 @@ dependencies = [
  "bitcoin_hashes",
  "failure",
  "hex 0.3.2",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "tcx-btc-fork",
@@ -5528,7 +5595,7 @@ dependencies = [
  "num-traits",
  "prost 0.6.1",
  "prost-types 0.6.1",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "tcx-chain",
@@ -5552,7 +5619,7 @@ dependencies = [
  "hex 0.4.3",
  "prost 0.6.1",
  "regex",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "tcx-constants",
@@ -5566,6 +5633,8 @@ dependencies = [
 name = "tcx-cita"
 version = "0.1.0"
 dependencies = [
+ "cita-crypto",
+ "cita-sm2",
  "failure",
  "hex 0.3.2",
  "libproto",
@@ -5625,7 +5694,7 @@ dependencies = [
  "pbkdf2 0.3.0",
  "rand 0.6.5",
  "scrypt",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "sha2 0.8.2",
@@ -5647,7 +5716,7 @@ dependencies = [
  "prost 0.6.1",
  "rlp 0.4.6",
  "rust-crypto",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "sha3 0.8.2",
@@ -5696,6 +5765,8 @@ dependencies = [
  "blake2b_simd 0.5.11",
  "bls-signatures",
  "byteorder 1.4.3",
+ "cita-crypto-trait",
+ "cita-sm2",
  "digest 0.8.1",
  "ed25519-bip32",
  "failure",
@@ -5708,7 +5779,7 @@ dependencies = [
  "num-traits",
  "regex",
  "schnorrkel",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "sha2 0.9.9",
@@ -5862,7 +5933,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "prost 0.6.1",
- "secp256k1 0.19.0",
+ "secp256k1",
  "serde",
  "serde_json",
  "sha3 0.8.2",
@@ -6499,7 +6570,7 @@ checksum = "bf617d864d25af3587aa745529f7aaa541066c876d57e050c0d0c85c61c92aff"
 dependencies = [
  "libc",
  "memory_units",
- "num-rational",
+ "num-rational 0.2.4",
  "num-traits",
  "parity-wasm",
  "wasmi-validation",
@@ -6804,6 +6875,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
 dependencies = [
  "linked-hash-map",
+]
+
+[[package]]
+name = "yasna"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a31ff5b5f5fcc70c5da4fcbdcbd91d541bb95b0b2517a3ca5cdc49fd3692cbb"
+dependencies = [
+ "bit-vec",
+ "num",
 ]
 
 [[package]]

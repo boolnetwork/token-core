@@ -1,10 +1,28 @@
 #![allow(deprecated)]
-use crate::transaction::{Crypto, SignedTransaction, Transaction, UnverifiedTransaction};
+use crate::transaction::{SignedTransaction, Transaction};
 use crate::Error;
+use cita_crypto::PrivKey;
+use libproto::Transaction as ProtoTx;
 use prost::Message;
-use sha3::Digest;
+use protobuf::Message as ProtoMessage;
 use tcx_chain::{Keystore, Result, TransactionSigner};
-use tcx_primitive::PrivateKey;
+
+impl From<Transaction> for ProtoTx {
+    fn from(value: Transaction) -> Self {
+        let mut tx = ProtoTx::new();
+        tx.set_to(value.to.clone());
+        tx.set_nonce(value.nonce.clone());
+        tx.set_quota(value.quota);
+        tx.set_valid_until_block(value.valid_until_block);
+        tx.set_data(value.data.clone());
+        tx.set_value(value.value.clone());
+        tx.set_chain_id(value.chain_id);
+        tx.set_version(value.version);
+        tx.set_to_v1(value.to_v1.clone());
+        tx.set_chain_id_v1(value.chain_id_v1.clone());
+        tx
+    }
+}
 
 impl TransactionSigner<Transaction, SignedTransaction> for Keystore {
     fn sign_transaction(
@@ -20,39 +38,20 @@ impl TransactionSigner<Transaction, SignedTransaction> for Keystore {
         let private_key = self
             .find_private_key(&symbol, &address)
             .map_err(|_| Error::CannotGetPrivateKey)?;
-        let private_key = private_key
-            .as_secp256k1()
-            .map_err(|_| Error::CannotGetPrivateKey)?;
-
-        let mut tx_bytes = vec![];
-        Message::encode(tx, &mut tx_bytes).map_err(|_| Error::SerializeError)?;
-        let hash = sha3::Keccak256::digest(&tx_bytes).to_vec();
-        let signature = private_key
-            .sign_recoverable(&hash)
-            .map_err(|_| Error::SignError)?;
-
-        let unverified_tx = UnverifiedTransaction {
-            transaction: Some(tx.clone()),
-            signature,
-            crypto: Crypto::Default as i32,
-        };
-        let mut unverified_tx_bytes: Vec<u8> = vec![];
-        Message::encode(&unverified_tx, &mut unverified_tx_bytes).unwrap();
-
-        let signed_tx = SignedTransaction {
-            transaction_with_sig: Some(unverified_tx),
-            tx_hash: sha3::Keccak256::digest(&unverified_tx_bytes).to_vec(),
-            signer: private_key.public_key().to_uncompressed()[1..].to_vec(),
-        };
-
-        Ok(signed_tx)
+        let sk = PrivKey::from_slice(&private_key.to_bytes());
+        let proto_tx: ProtoTx = tx.clone().into();
+        let signed_tx = proto_tx.sign(sk);
+        let mut signed_tx_bytes = vec![];
+        signed_tx
+            .write_to_vec(&mut signed_tx_bytes)
+            .map_err(|_| Error::SerializeError)?;
+        SignedTransaction::decode(signed_tx_bytes.as_slice())
+            .map_err(|_| Error::DecodeTransactionError.into())
     }
 }
 
 #[test]
 fn test_cita_encode() {
-    use protobuf::Message as ProtoMessage;
-
     let transaction = Transaction {
         nonce: "0".to_string(),
         quota: 0,

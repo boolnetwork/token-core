@@ -15,6 +15,9 @@ pub enum Error {
     #[fail(display = "cannot_get_private_key")]
     CannotGetPrivateKey,
 
+    #[fail(display = "invalid_public_key")]
+    InvalidPubkey,
+
     #[fail(display = "invalid_to")]
     InvalidTo,
 

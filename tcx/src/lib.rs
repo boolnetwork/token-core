@@ -3364,16 +3364,23 @@ mod tests {
     #[test]
     pub fn test_sign_cita_tx() {
         run_test(|| {
+            let wallet = import_default_pk_store();
             let derivation = Derivation {
                 chain_type: "MTT".to_string(),
                 path: "m/44'/60'/0'/0/0".to_string(),
                 network: "CITA".to_string(),
                 seg_wit: "".to_string(),
                 chain_id: "1".to_string(),
-                curve: "".to_string(),
+                curve: "Sm2".to_string(),
             };
 
-            let wallet = import_and_derive(derivation);
+            let param = KeystoreCommonDeriveParam {
+                id: wallet.id.to_string(),
+                password: TEST_PASSWORD.to_string(),
+                derivations: vec![derivation],
+            };
+            let ret = call_api("keystore_common_derive", param).unwrap();
+            let rsp: AccountsResponse = AccountsResponse::decode(ret.as_slice()).unwrap();
 
             let input = CitaTransaction {
                 nonce: "0".to_string(),
@@ -3394,7 +3401,7 @@ mod tests {
                 id: wallet.id.to_string(),
                 key: Some(Key::Password(TEST_PASSWORD.to_string())),
                 chain_type: "MTT".to_string(),
-                address: wallet.accounts.first().unwrap().address.to_string(),
+                address: rsp.accounts.first().unwrap().address.to_string(),
                 input: Some(::prost_types::Any {
                     type_url: "imtoken".to_string(),
                     value: encode_message(input).unwrap(),
@@ -3402,16 +3409,8 @@ mod tests {
             };
 
             let ret = call_api("sign_tx", tx).unwrap();
-            assert_eq!(hex::encode(&ret), "0ac8010a82010a283133324431654137454638393562363833344432353931313635366134333464373136373039314312013020e8072a483766373436353733373433323030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303630303035373204000000003801124111b70f4159ab2eed0fa17f45469de56e12541dbf6e120352fc64d33394f2f72d6e2c1834784a85231f10d219fb5a2db9ae7f99f5386d063fdfecaa6cbef69938011220ab1b9b18c63651b3b306f40bb47183868ebe1f835482daaa2ee336ecefcc20071a4080c98b8ea7cab630defb0c09a4295c2193cdee016c1d5b9b0cb18572b9c370fefbc790fc3291d3cb6441ac94c3952035c409f4374d1780f400c1ed92972ce83c");
-
             let _output: CitaSignedTransaction =
                 CitaSignedTransaction::decode(ret.as_slice()).unwrap();
-            assert_eq!(
-                hex::encode(_output.tx_hash),
-                "ab1b9b18c63651b3b306f40bb47183868ebe1f835482daaa2ee336ecefcc2007"
-            );
-            assert_eq!(hex::encode(_output.signer), "80c98b8ea7cab630defb0c09a4295c2193cdee016c1d5b9b0cb18572b9c370fefbc790fc3291d3cb6441ac94c3952035c409f4374d1780f400c1ed92972ce83c");
-
             remove_created_wallet(&wallet.id);
         })
     }

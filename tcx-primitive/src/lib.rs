@@ -11,6 +11,7 @@ mod ed25519;
 mod ed25519_bip32;
 mod rand;
 mod secp256k1;
+mod sm2;
 mod sr25519;
 mod starknet_curve;
 mod subkey;

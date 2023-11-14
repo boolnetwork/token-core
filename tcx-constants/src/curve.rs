@@ -10,6 +10,7 @@ pub enum CurveType {
     NIST256p1,
     BLS, /* "bls" */
     StarknetCurve,
+    Sm2,
 }
 
 impl CurveType {
@@ -23,6 +24,7 @@ impl CurveType {
             CurveType::NIST256p1 => "NIST256p1",
             CurveType::BLS => "BLS",
             CurveType::StarknetCurve => "STARKNET_CURVE",
+            CurveType::Sm2 => "Sm2",
         }
     }
 }

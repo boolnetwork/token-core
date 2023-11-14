@@ -1,4 +1,3 @@
-use sha3::Digest;
 use tcx_chain::Address;
 use tcx_constants::{CoinInfo, Result};
 use tcx_primitive::TypedPublicKey;
@@ -7,9 +6,10 @@ pub struct CitaAddress;
 
 impl Address for CitaAddress {
     fn from_public_key(public_key: &TypedPublicKey, _coin: &CoinInfo) -> Result<String> {
-        let pk = public_key.as_secp256k1()?.to_uncompressed();
-        let hash = sha3::Keccak256::digest(&pk[1..]).to_vec().split_off(12);
-        let address = hex::encode(hash);
+        let address = match public_key {
+            TypedPublicKey::Sm2(pk) => hex::encode(cita_sm2::pubkey_to_address(&pk.0).0),
+            _ => return Err(crate::Error::InvalidPubkey.into()),
+        };
         Ok("0x".to_string() + &address)
     }
 

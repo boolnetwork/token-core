@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 /// Blockchain basic config
 ///
 /// NOTE: Unique key field is `symbol`
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CoinInfo {
     pub coin: String,
     pub derivation_path: String,
@@ -484,7 +484,7 @@ lazy_static! {
         coin_infos.push(CoinInfo {
             coin: "MTT".to_string(),
             derivation_path: "m/44'/60'/0'/0/0".to_string(),
-            curve: CurveType::SECP256k1,
+            curve: CurveType::Sm2,
             network: "CITA".to_string(),
             seg_wit: "NONE".to_string(),
         });
