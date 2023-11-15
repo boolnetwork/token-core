@@ -1,28 +1,11 @@
 #![allow(deprecated)]
-use crate::transaction::{SignedTransaction, Transaction};
+use crate::transaction::{SignedTransaction, Transaction, UnverifiedTransaction};
 use crate::Error;
-use cita_crypto::PrivKey;
-use libproto::Transaction as ProtoTx;
+use cita_crypto::{PrivKey, Sign};
+use cita_sm2::Signature;
+use hashable::Hashable;
 use prost::Message;
-use protobuf::Message as ProtoMessage;
 use tcx_chain::{Keystore, Result, TransactionSigner};
-
-impl From<Transaction> for ProtoTx {
-    fn from(value: Transaction) -> Self {
-        let mut tx = ProtoTx::new();
-        tx.set_to(value.to.clone());
-        tx.set_nonce(value.nonce.clone());
-        tx.set_quota(value.quota);
-        tx.set_valid_until_block(value.valid_until_block);
-        tx.set_data(value.data.clone());
-        tx.set_value(value.value.clone());
-        tx.set_chain_id(value.chain_id);
-        tx.set_version(value.version);
-        tx.set_to_v1(value.to_v1.clone());
-        tx.set_chain_id_v1(value.chain_id_v1.clone());
-        tx
-    }
-}
 
 impl TransactionSigner<Transaction, SignedTransaction> for Keystore {
     fn sign_transaction(
@@ -39,19 +22,30 @@ impl TransactionSigner<Transaction, SignedTransaction> for Keystore {
             .find_private_key(&symbol, &address)
             .map_err(|_| Error::CannotGetPrivateKey)?;
         let sk = PrivKey::from_slice(&private_key.to_bytes());
-        let proto_tx: ProtoTx = tx.clone().into();
-        let signed_tx = proto_tx.sign(sk);
-        let mut signed_tx_bytes = vec![];
-        signed_tx
-            .write_to_vec(&mut signed_tx_bytes)
+        let mut tx_bytes = vec![];
+        Message::encode(tx, &mut tx_bytes).map_err(|_| Error::SerializeError)?;
+        let hash = tx_bytes.crypt_hash();
+        let signature = Signature::sign(&sk, &hash).map_err(|_| Error::SignError)?;
+        let unverified_tx = UnverifiedTransaction {
+            transaction: Some(tx.clone()),
+            signature: signature.to_vec(),
+            crypto: 0,
+        };
+        let mut unverified_tx_bytes = vec![];
+        Message::encode(&unverified_tx, &mut unverified_tx_bytes)
             .map_err(|_| Error::SerializeError)?;
-        SignedTransaction::decode(signed_tx_bytes.as_slice())
-            .map_err(|_| Error::DecodeTransactionError.into())
+        Ok(SignedTransaction {
+            transaction_with_sig: Some(unverified_tx),
+            tx_hash: unverified_tx_bytes.crypt_hash().to_vec(),
+            signer: private_key.public_key().to_bytes(),
+        })
     }
 }
 
 #[test]
 fn test_cita_encode() {
+    use protobuf::Message;
+
     let transaction = Transaction {
         nonce: "0".to_string(),
         quota: 0,

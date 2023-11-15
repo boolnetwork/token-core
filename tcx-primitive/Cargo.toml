@@ -31,8 +31,8 @@ num-traits = "0.2.8"
 sha2 = "0.9.1"
 digest = "0.8"
 hkdf = "0.9.0"
-cita-crypto-trait = { git = "https://github.com/boolnetwork/cita-common.git", branch = "develop" }
-cita-sm2 = { git = "https://github.com/boolnetwork/cita-common.git", branch = "develop", features = ["sm3hash"] }
+cita-crypto-trait = { git = "https://github.com/citahub/cita-common.git", branch = "develop" }
+cita-sm2 = { git = "https://github.com/citahub/cita-common.git", branch = "develop", features = ["sm3hash"] }
 libsm = { git = "https://github.com/citahub/libsm", rev = "4d0e6199fca0934c58131de1d0036e9aa4da26c1" }
 
 sp-core = "2.0.0-rc3"
