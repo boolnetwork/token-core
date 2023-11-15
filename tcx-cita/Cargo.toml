@@ -14,6 +14,6 @@ prost = "0.6.1"
 failure = "0.1.5"
 sha3 = "0.8.2"
 protobuf = { version = "=2.8.1", features = ["with-bytes"]}
-cita-sm2 = { git = "https://github.com/citahub/cita-common.git", branch = "develop", features = ["sm3hash"] }
-cita-crypto = { git = "https://github.com/citahub/cita-common.git", branch = "develop", features = ["sm2"] }
-libproto = { git = "https://github.com/citahub/cita-common.git", branch = "develop", features = ["sm3hash","sm2"] }
+cita-sm2 = { git = "https://github.com/boolnetwork/cita-common.git", branch = "develop", features = ["sm3hash"] }
+cita-crypto = { git = "https://github.com/boolnetwork/cita-common.git", branch = "develop", features = ["sm2"] }
+libproto = { git = "https://github.com/boolnetwork/cita-common.git", branch = "develop", features = ["sm3hash","sm2"] }

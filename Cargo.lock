@@ -810,7 +810,7 @@ dependencies = [
 [[package]]
 name = "cita-crypto"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "cita-crypto-trait",
  "cita-sm2",
@@ -819,7 +819,7 @@ dependencies = [
 [[package]]
 name = "cita-crypto-trait"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "cita-types",
 ]
@@ -841,7 +841,7 @@ dependencies = [
 [[package]]
 name = "cita-merklehash"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "cita-types",
  "hashable",
@@ -852,7 +852,7 @@ dependencies = [
 [[package]]
 name = "cita-sm2"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "cita-crypto-trait",
  "cita-types",
@@ -866,7 +866,7 @@ dependencies = [
 [[package]]
 name = "cita-types"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "ethereum-types 0.4.2",
  "plain_hasher",
@@ -2085,7 +2085,7 @@ dependencies = [
 [[package]]
 name = "hashable"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "cita-types",
  "libsm",
@@ -2631,7 +2631,7 @@ checksum = "a08173bc88b7955d1b3145aa561539096c421ac8debde8cbc3612ec635fee29b"
 [[package]]
 name = "libproto"
 version = "0.6.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "cita-crypto",
  "cita-logger",
@@ -3051,7 +3051,7 @@ checksum = "e63899ad0da84ce718c14936262a41cee2c79c981fc0a0e7c7beb47d5a07e8c1"
 dependencies = [
  "num-integer",
  "num-traits",
- "rand 0.3.23",
+ "rand 0.4.6",
  "rustc-serialize",
 ]
 
@@ -4222,7 +4222,7 @@ dependencies = [
 [[package]]
 name = "rlp"
 version = "0.2.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "byteorder 1.4.3",
  "cita-types",
@@ -4849,7 +4849,7 @@ checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 [[package]]
 name = "snappy"
 version = "0.1.0"
-source = "git+https://github.com/citahub/cita-common.git?branch=develop#5acb4259e4398403ede0faf2b464b15c66b87e8c"
+source = "git+https://github.com/boolnetwork/cita-common.git?branch=develop#27e208970091eba1b4c44a467ba66d67d66071ef"
 dependencies = [
  "libc",
 ]
