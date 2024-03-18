@@ -137,7 +137,13 @@ fn bech32_network(bech32: &str) -> Option<BtcForkNetwork> {
         Some(sep) => Some(bech32.split_at(sep).0),
     };
     match bech32_prefix {
-        Some(prefix) => network_form_hrp(prefix),
+        Some(prefix) => {
+            if prefix.len() == 0 {
+                None
+            } else {
+                network_form_hrp(prefix)
+            }
+        }
         None => None,
     }
 }
@@ -578,7 +584,7 @@ mod tests {
     pub fn address_valid_test() {
         let coin = coin_info_from_param("BITCOIN", "MAINNET", "P2WPKH", "").unwrap();
         assert!(BtcForkAddress::is_valid(
-            "3Js9bGaZSQCNLudeGRHL4NExVinc25RbuG",
+            "bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h",
             &coin
         ));
         let coin = coin_info_from_param("LITECOIN", "MAINNET", "NONE", "").unwrap();
