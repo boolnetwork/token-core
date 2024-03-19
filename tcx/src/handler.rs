@@ -747,15 +747,15 @@ pub fn sign_btc_fork_transaction(param: &SignParam, keystore: &mut Keystore) -> 
         let tran = BchTransaction::new(input, coin);
         keystore.sign_transaction(&param.chain_type, &param.address, &tran)?
     } else if input.seg_wit.as_str() != "NONE" {
-        // if !BtcForkAddress::is_valid(&input.to, &coin) {
-        //     return Err(format_err!("address_invalid"));
-        // }
+        if !BtcForkAddress::is_valid(&input.to, &coin) {
+            return Err(format_err!("address_invalid"));
+        }
         let tran = BtcForkSegWitTransaction::new(input, coin);
         keystore.sign_transaction(&param.chain_type, &param.address, &tran)?
     } else {
-        // if !BtcForkAddress::is_valid(&input.to, &coin) {
-        //     return Err(format_err!("address_invalid"));
-        // }
+        if !BtcForkAddress::is_valid(&input.to, &coin) {
+            return Err(format_err!("address_invalid"));
+        }
         let tran = BtcForkTransaction::new(input, coin);
         keystore.sign_transaction(&param.chain_type, &param.address, &tran)?
     };
