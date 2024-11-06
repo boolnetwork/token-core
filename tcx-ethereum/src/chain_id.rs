@@ -179,6 +179,11 @@ lazy_static! {
             network_id: 7181,
             chain_id: 7181,
         });
+        chain_infos.push(ChainInfo {
+            network: "OCEANIA".to_string(),
+            network_id: 17979,
+            chain_id: 17979,
+        });
         RwLock::new(chain_infos)
     };
 }
